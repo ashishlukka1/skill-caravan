@@ -1,7 +1,8 @@
 import axios from 'axios';
 
+// Use environment variable for baseURL if available, fallback to production URL
 const instance = axios.create({
-  baseURL: 'https://skill-caravan.onrender.com',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://skill-caravan.onrender.com',
   headers: {
     'Content-Type': 'application/json'
   }
@@ -16,9 +17,7 @@ instance.interceptors.request.use(
     }
     return config;
   },
-  error => {
-    return Promise.reject(error);
-  }
+  error => Promise.reject(error)
 );
 
 export default instance;

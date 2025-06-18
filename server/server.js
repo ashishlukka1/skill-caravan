@@ -10,7 +10,11 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors({
-  origin: ["https://olive-skill-test.vercel.app", "http://localhost:3000"],
+  origin: [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "https://skill-caravan.vercel.app"
+  ],
   credentials: true,
 }));
 app.use(express.json());

@@ -17,6 +17,35 @@ const upload = multer({
 });
 
 
+router.get("/search", async (req, res) => {
+  try {
+    const q = req.query.q?.trim() || "";
+    const limit = parseInt(req.query.limit) || 8;
+
+    if (!q || q.length < 2) {
+      return res.json([]); // Don't search for empty/short queries
+    }
+
+    // Search in title, tags, category, and instructor name (if populated)
+    const courses = await Course.find({
+      $or: [
+        { title: { $regex: q, $options: "i" } },
+        { tags: { $regex: q, $options: "i" } },
+        { category: { $regex: q, $options: "i" } }
+      ]
+    })
+      .populate({ path: "instructor", select: "name" })
+      .select("title instructor tags duration level thumbnail price isPaid rating reviewCount category")
+      .limit(limit);
+
+    res.json(courses);
+  } catch (err) {
+    console.error("Course search error:", err);
+    res.status(500).json({ message: "Error searching courses" });
+  }
+});
+
+
 router.get("/test-user", authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
