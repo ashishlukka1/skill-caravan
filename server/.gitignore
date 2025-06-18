@@ -33,4 +33,4 @@ coverage/
 # Misc
 
 
-server/serviceAccountKey.json
+serviceAccountKey.json
