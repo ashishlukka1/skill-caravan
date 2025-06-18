@@ -13,7 +13,7 @@ app.use(cors({
   origin: [
     "http://localhost:5173",
     "http://localhost:3000",
-    "https://skill-caravan.vercel.app"
+    "https://olive-skill-test.vercel.app"
   ],
   credentials: true,
 }));
