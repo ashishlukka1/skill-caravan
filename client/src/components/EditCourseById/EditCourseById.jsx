@@ -682,21 +682,7 @@ const EditCourseById = () => {
                                 placeholder="Lesson Content"
                               />
                             </Form.Group>
-                            <Form.Group className="mb-2">
-                              <Form.Label>Video URL</Form.Label>
-                              <Form.Control
-                                value={lesson.videoUrl}
-                                onChange={(e) =>
-                                  handleLessonChange(
-                                    unitIndex,
-                                    lessonIndex,
-                                    "videoUrl",
-                                    e.target.value
-                                  )
-                                }
-                                placeholder="Video URL"
-                              />
-                            </Form.Group>
+                            
                             <Form.Group className="mb-2">
                               <Form.Label>Duration (minutes)</Form.Label>
                               <Form.Control

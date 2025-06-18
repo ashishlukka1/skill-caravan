@@ -9,15 +9,46 @@ import "./CourseDetail.css";
 const ResourceModal = ({ resource, show, onHide, onComplete }) => {
   if (!resource) return null;
 
+  //to prevent closing the modal if the resouce is a video file or video URL
+  const isVideo = resource.type === 'video_file' || resource.type === 'video_url';
+
+  const isYouTubeUrl = (url) =>
+    url.includes("youtube.com") || url.includes("youtu.be");
+
+
+  const getYouTubeEmbedUrl = (url) => {
+    if (url.includes("youtube.com")) {
+      const urlObj = new URL(url);
+      const videoId = urlObj.searchParams.get("v");
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+    }
+    if (url.includes("youtu.be")) {
+      const videoId = url.split("/").pop();
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+    return url;
+  };
+
   return (
-    <Modal show={show} onHide={onHide} size="lg">
+    <Modal
+      show={show}
+      onHide={onHide}
+      size="lg"
+      backdrop={isVideo ? "static" : true}
+      keyboard={!isVideo ? true : false}
+    >
       <Modal.Header closeButton>
         <Modal.Title>{resource.title}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         {resource.type === 'video_url' && (
           <div className="ratio ratio-16x9">
-            <iframe src={resource.url} title={resource.title} allowFullScreen></iframe>
+            <iframe
+              src={isYouTubeUrl(resource.url) ? getYouTubeEmbedUrl(resource.url) : resource.url}
+              title={resource.title}
+              allowFullScreen
+              style={{ border: 0, width: "100%", height: "100%" }}
+            ></iframe>
           </div>
         )}
         {resource.type === 'video_file' && (
@@ -28,9 +59,9 @@ const ResourceModal = ({ resource, show, onHide, onComplete }) => {
         )}
         {(resource.type === 'document' || resource.type === 'document_url') && (
           <div className="text-center">
-            <a 
-              href={resource.url} 
-              target="_blank" 
+            <a
+              href={resource.url}
+              target="_blank"
               rel="noopener noreferrer"
               className="btn btn-primary"
             >
@@ -40,16 +71,10 @@ const ResourceModal = ({ resource, show, onHide, onComplete }) => {
           </div>
         )}
       </Modal.Body>
-      <Modal.Footer>
-        {onComplete && (
-          <Button variant="success" onClick={onComplete}>
-            Mark as Complete
-          </Button>
-        )}
-      </Modal.Footer>
     </Modal>
   );
 };
+
 
 const CourseDetail = () => {
   const [course, setCourse] = useState(null);
@@ -221,21 +246,21 @@ const CourseDetail = () => {
   };
 
   const getAssignmentButtonText = (unitIdx, unitProgress, unit) => {
-  const isUnitUnlocked = unitIdx === 0 || progress?.unitsProgress?.[unitIdx - 1]?.completed;
-  if (!isUnitUnlocked) return "Complete previous unit first";
-  if (!areAllLessonsCompleted(unitIdx)) return "Complete all lessons first";
-  const totalScore = getAssignedSetTotalScore(unit, unitProgress);
-  if (
-    unitProgress?.assignment?.status === "submitted" &&
-    unitProgress?.assignment?.score !== totalScore
-  ) {
-    return "Retake Assignment";
-  }
-  if (isAssignmentPerfect(unit, unitProgress)) return "Assignment Complete";
-  if (!unitProgress?.assignment?.assignedSetNumber) return "Start Assignment";
-  if (unitProgress?.assignment?.status === "submitted") return "Review Assignment";
-  return "Continue Assignment";
-};
+    const isUnitUnlocked = unitIdx === 0 || progress?.unitsProgress?.[unitIdx - 1]?.completed;
+    if (!isUnitUnlocked) return "Complete previous unit first";
+    if (!areAllLessonsCompleted(unitIdx)) return "Complete all lessons first";
+    const totalScore = getAssignedSetTotalScore(unit, unitProgress);
+    if (
+      unitProgress?.assignment?.status === "submitted" &&
+      unitProgress?.assignment?.score !== totalScore
+    ) {
+      return "Retake Assignment";
+    }
+    if (isAssignmentPerfect(unit, unitProgress)) return "Assignment Complete";
+    if (!unitProgress?.assignment?.assignedSetNumber) return "Start Assignment";
+    if (unitProgress?.assignment?.status === "submitted") return "Review Assignment";
+    return "Continue Assignment";
+  };
 
   const renderAssignment = (unit, unitIdx) => {
     if (!unit.assignment?.assignmentSets?.length) return null;
@@ -323,8 +348,8 @@ const CourseDetail = () => {
 
   if (loading) {
     return (
-      <div className="text-center py-5">
-        <Spinner animation="border" variant="primary" />
+      <div className="text-center m-5 py-5 min-vh-100">
+        <Spinner animation="border" variant="primary" className="m-5"/>
       </div>
     );
   }
@@ -340,6 +365,24 @@ const CourseDetail = () => {
   const unit = course.units[selectedUnit];
   const unitProgress = progress?.unitsProgress?.[selectedUnit];
   const isUnitUnlocked = selectedUnit === 0 || progress?.unitsProgress?.[selectedUnit - 1]?.completed;
+
+  // Helper to check if a URL is a YouTube link
+  const isYouTubeUrl = (url) =>
+    url.includes("youtube.com") || url.includes("youtu.be");
+
+  // Helper to get YouTube embed URL
+  const getYouTubeEmbedUrl = (url) => {
+    if (url.includes("youtube.com")) {
+      const urlObj = new URL(url);
+      const videoId = urlObj.searchParams.get("v");
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+    }
+    if (url.includes("youtu.be")) {
+      const videoId = url.split("/").pop();
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+    return url;
+  };
 
   return (
     <div className="course-detail-page">
@@ -502,17 +545,30 @@ const CourseDetail = () => {
                                 ))}
                               </div>
                             )}
+                            {/* Video URL Section */}
+                            {lesson.videoUrl && (
+                              <div className="lesson-video mb-3">
+                                {isYouTubeUrl(lesson.videoUrl) ? (
+                                  <div className="ratio ratio-16x9 mb-2">
+                                    <iframe
+                                      src={getYouTubeEmbedUrl(lesson.videoUrl)}
+                                      title="Lesson Video"
+                                      allowFullScreen
+                                    ></iframe>
+                                  </div>
+                                ) : (
+                                  <a
+                                    href={lesson.videoUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="btn btn-outline-primary btn-sm"
+                                  >
+                                    <FaPlay className="me-1" /> Watch Video
+                                  </a>
+                                )}
+                              </div>
+                            )}
                             <div className="d-flex justify-content-between align-items-center">
-                              {lesson.videoUrl && (
-                                <a
-                                  href={lesson.videoUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="btn btn-outline-primary btn-sm"
-                                >
-                                  <FaPlay className="me-1" /> Watch Video
-                                </a>
-                              )}
                               <Button
                                 size="sm"
                                 variant={isLessonCompleted ? "success" : "outline-success"}
