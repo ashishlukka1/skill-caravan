@@ -1,0 +1,155 @@
+.add-course-container {
+  padding: 3rem 0;
+  background-color: #f8fafc;
+  min-height: calc(100vh - 64px);
+  margin-left: 3rem;
+  margin-right: 3rem;
+  margin-top: 3rem;
+}
+
+
+
+
+
+.unit-section {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.unit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.unit-title {
+  color: #4f46e5;
+  margin: 0;
+  font-weight: 600;
+}
+
+.lessons-section,
+.assignment-section {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.lesson-item {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-left: 4px solid #4f46e5;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  border-radius: 0 8px 8px 0;
+}
+
+.question-item {
+  background: white;
+  border: 1px solid #e5e7eb;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+  color: #4f46e5;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.form-label {
+  font-weight: 500;
+  color: #4b5563;
+}
+
+
+.btn-primary {
+  background-color: #4f46e5;
+  border-color: #4f46e5;
+}
+
+.btn-primary:hover {
+  background-color: #4338ca;
+  border-color: #4338ca;
+}
+
+.btn-outline-primary {
+  color: #4f46e5;
+  border-color: #4f46e5;
+}
+
+.btn-outline-primary:hover {
+  background-color: #4f46e5;
+  border-color: #4f46e5;
+}
+
+.alert {
+  border-radius: 8px;
+}
+
+.user-assignment-section {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+  background: #f8fafc;
+}
+
+.user-result-item {
+  padding: 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.user-result-item:last-child {
+  border-bottom: none;
+}
+
+.selected-users-count {
+  color: #4f46e5;
+  font-weight: 500;
+}
+
+.user-results {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: white;
+}
+
+
+.resources-section {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.resource-item {
+  padding: 0.5rem;
+  border: 1px solid #dee2e6;
+  border-radius: 0.25rem;
+  background: white;
+}
+
+.resource-form {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: 0.5rem;
+  background: white;
+}

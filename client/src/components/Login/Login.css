@@ -1,0 +1,15 @@
+@import "../UserLoginDetails/UserLoginDetails.css";
+
+.forgot-link,
+.login-link {
+  color: #2563eb;
+  cursor: pointer;
+  /* text-decoration: underline; */
+  font-weight: 500;
+}
+
+.forgot-link:hover,
+.login-link:hover {
+  color: #174ea6;
+  text-decoration: underline;    
+}

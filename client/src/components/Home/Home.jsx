@@ -1,0 +1,387 @@
+import React, { useState, useEffect, useContext, useMemo, useRef } from 'react';
+import { Container, Row, Col, Card, Nav, Spinner, Alert, Badge, Tab } from 'react-bootstrap';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { FaGraduationCap, FaCheck, FaBookOpen, FaTasks, FaChevronRight, FaPlay, FaChevronLeft } from 'react-icons/fa';
+import { useNavigate, Link } from 'react-router-dom';
+import { AuthContext } from '../../context/AuthContext';
+import axios from '../../utils/axios';
+import 'swiper/css';
+import 'swiper/css/pagination';
+import 'swiper/css/autoplay';
+import { Autoplay, Pagination, Navigation } from 'swiper/modules';
+import './Home.css';
+
+const defaultThumbnail = 'https://i.postimg.cc/2yM5Xc24/20250613-1228-MERN-Stack-Mastery-simple-compose-01jxm18cdtfv4t59p18zc5pahx.png';
+
+const bannerImages = [
+  'https://storage.googleapis.com/skcn-prod-mb-public-tenants/banner_image/a09c6580-3f6f-4f9a-80cc-414b8334828f/29e252a2-00fb-4105-9aa6-2ac2549204ec.png',
+  'https://storage.googleapis.com/skcn-prod-mb-public-tenants/banner_image/a09c6580-3f6f-4f9a-80cc-414b8334828f/e7c2f5a6-27e0-4892-b88d-52305c154a9a.png',
+  'https://storage.googleapis.com/skcn-prod-mb-public-tenants/banner_image/a09c6580-3f6f-4f9a-80cc-414b8334828f/8437f417-f7f4-4781-91ea-7172455614b8.png',
+  'https://storage.googleapis.com/skcn-prod-mb-public-tenants/banner_image/a09c6580-3f6f-4f9a-80cc-414b8334828f/87272a6e-9da6-4965-985e-f9d278c5229a.png',
+  'https://i.postimg.cc/t4BMFSZv/20250611-1555-Epic-Knowledge-Journey-simple-compose-01jxf8a30yf098t7d3snekevnt.png'
+];
+
+const statsCards = [
+  { 
+    icon: <FaBookOpen />, 
+    type: 'active', 
+    label: 'Active Courses', 
+    key: 'activeCourses',
+    color: '#4f46e5'
+  },
+  { 
+    icon: <FaCheck />, 
+    type: 'completed', 
+    label: 'Completed', 
+    key: 'completedCourses',
+    color: '#10b981'
+  },
+  { 
+    icon: <FaGraduationCap />, 
+    type: 'enrolled', 
+    label: 'Total Enrolled', 
+    key: 'totalEnrolled',
+    color: '#f59e0b'
+  },
+  { 
+    icon: <FaTasks />, 
+    type: 'assignments', 
+    label: 'Assignments Done', 
+    key: 'submittedAssignments',
+    color: '#3b82f6'
+  }
+];
+
+const CourseCard = ({ enrollment, course, onNavigate, isRecommended = false }) => {
+  const { user } = useContext(AuthContext); // Add this line
+  const courseData = enrollment?.course || course;
+  
+  // Check if user is enrolled in this course
+  const isEnrolled = useMemo(() => {
+    if (!user?.enrolledCourses || !courseData?._id) return false;
+    return user.enrolledCourses.some(
+      enrollment => enrollment.course === courseData._id || 
+                   enrollment.course?._id === courseData._id
+    );
+  }, [user?.enrolledCourses, courseData?._id]);
+
+  const buttonText = isEnrolled ? 'Resume' : 'Enroll';
+  const buttonClass = `btn-horizontal-resume ${isEnrolled ? 'enrolled' : ''}`;
+
+  
+  const calculateLastUnit = (enrollment) => {
+    if (!enrollment?.unitsProgress?.length) return 'Start Course';
+    
+    const lastAccessedUnit = enrollment.unitsProgress
+      .filter(u => u?.completed)
+      .sort((a, b) => new Date(b?.lastAccessed || 0) - new Date(a?.lastAccessed || 0))[0];
+    
+    return lastAccessedUnit ? `Unit ${lastAccessedUnit.unitIndex + 1}` : 'Start Course';
+  };
+
+  return (
+    <Card className="horizontal-course-card">
+      <div className="horizontal-course-image">
+        <Card.Img 
+          variant="top" 
+          src={courseData?.thumbnail || defaultThumbnail} 
+          alt={courseData?.title || 'Course'}
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = defaultThumbnail;
+          }}
+        />
+        <div className="horizontal-course-overlay">
+          <Badge className="horizontal-category-badge">
+            {courseData?.category || 'General'}
+          </Badge>
+          {/* {isEnrolled && (
+            <Badge className="enrollment-badge bg-success">
+              Enrolled
+            </Badge>
+          )} */}
+        </div>
+      </div>
+      <Card.Body className="horizontal-course-body">
+        <Card.Title className="horizontal-course-title">
+          {courseData?.title || 'Untitled Course'}
+        </Card.Title>
+        <div className="horizontal-course-footer">
+          <button 
+            className={buttonClass}
+            onClick={() => onNavigate(courseData?._id)}
+            disabled={!courseData?._id}
+          >
+            <FaPlay className="play-icon" />
+            {buttonText}
+          </button>
+        </div>
+      </Card.Body>
+    </Card>
+  );
+};
+
+const HorizontalCourseSlider = ({ courses, title, tabData, onNavigate, isRecommended = false }) => {
+  const [activeTab, setActiveTab] = useState('inProgress');
+  const swiperRef = useRef(null);
+
+  const filteredCourses = useMemo(() => {
+    if (isRecommended) return courses;
+    return courses.filter(e => 
+      activeTab === 'completed' ? 
+        e.status === 'completed' : 
+        e.status === 'active'
+    );
+  }, [courses, activeTab, isRecommended]);
+
+  return (
+    <div className="horizontal-courses-section">
+      <div className="horizontal-section-header">
+        <h2>{title}</h2>
+        {!isRecommended && (
+          <div className="horizontal-navigation">
+            <button 
+              className="nav-arrow nav-prev"
+              onClick={() => swiperRef.current?.swiper?.slidePrev()}
+            >
+              <FaChevronLeft />
+            </button>
+            <button 
+              className="nav-arrow nav-next"
+              onClick={() => swiperRef.current?.swiper?.slideNext()}
+            >
+              <FaChevronRight />
+            </button>
+          </div>
+        )}
+        {isRecommended && (
+          <div className="horizontal-navigation">
+            <Link to="/courses" className="view-all-link">
+              View All
+            </Link>
+          </div>
+        )}
+      </div>
+      
+      {!isRecommended && tabData && (
+        <div className="horizontal-tabs-container">
+          <div className="horizontal-tabs">
+            <button 
+              className={`horizontal-tab-button ${activeTab === 'inProgress' ? 'active' : ''}`}
+              onClick={() => setActiveTab('inProgress')}
+            >
+              In Progress 
+              <Badge className="horizontal-tab-badge">{tabData.activeCourses}</Badge>
+            </button>
+            <button 
+              className={`horizontal-tab-button ${activeTab === 'completed' ? 'active' : ''}`}
+              onClick={() => setActiveTab('completed')}
+            >
+              Completed 
+              <Badge className="horizontal-tab-badge">{tabData.completedCourses}</Badge>
+            </button>
+          </div>
+          
+        </div>
+      )}
+
+      <div className="horizontal-courses-slider">
+        <Swiper
+          ref={swiperRef}
+          spaceBetween={16}
+          slidesPerView="auto"
+          navigation={false}
+          modules={[Navigation]}
+          className="courses-swiper"
+          breakpoints={{
+            320: {
+              slidesPerView: 1.2,
+              spaceBetween: 12
+            },
+            576: {
+              slidesPerView: 2,
+              spaceBetween: 16
+            },
+            768: {
+              slidesPerView: 3,
+              spaceBetween: 16
+            },
+            992: {
+              slidesPerView: 4,
+              spaceBetween: 16
+            },
+            1200: {
+              slidesPerView: isRecommended ? 4 : 4,
+              spaceBetween: 16
+            }
+          }}
+        >
+          {filteredCourses.length === 0 ? (
+            <div className="empty-slider">
+              <p>No courses found in this category.</p>
+            </div>
+          ) : (
+            filteredCourses.map((item, index) => (
+              <SwiperSlide key={isRecommended ? item._id : item._id} className="course-slide">
+                <CourseCard
+                  enrollment={isRecommended ? null : item}
+                  course={isRecommended ? item : null}
+                  onNavigate={onNavigate}
+                  isRecommended={isRecommended}
+                />
+              </SwiperSlide>
+            ))
+          )}
+        </Swiper>
+        
+        {/* Fade effect for recommended courses */}
+        {filteredCourses.length > 4 && (
+          <div className="fade-overlay-right"></div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const Home = () => {
+  const { user } = useContext(AuthContext);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [enrollments, setEnrollments] = useState([]);
+  const [recommendedCourses, setRecommendedCourses] = useState([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // Fetch enrollments
+        const enrollmentsResponse = await axios.get('/api/users/enrollments');
+        setEnrollments(enrollmentsResponse.data?.filter(e => e?.course) || []);
+        
+        // Fetch recommended courses (all published courses)
+        const coursesResponse = await axios.get('/api/courses');
+        setRecommendedCourses(coursesResponse.data || []);
+      } catch (err) {
+        setError('Failed to load data. Please try again later.');
+        console.error('Error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user?._id) {
+      fetchData();
+    }
+  }, [user?._id]);
+
+  const stats = useMemo(() => ({
+    activeCourses: enrollments.filter(e => e.status === 'active').length,
+    completedCourses: enrollments.filter(e => e.status === 'completed').length,
+    totalEnrolled: enrollments.length,
+    submittedAssignments: enrollments.reduce((acc, curr) => 
+      acc + (curr.unitsProgress?.filter(u => u?.assignment?.status === 'submitted')?.length || 0), 0)
+  }), [enrollments]);
+
+
+  const filteredRecommendedCourses = useMemo(() => {
+  // Return all courses without filtering out enrolled ones
+  return recommendedCourses;
+}, [recommendedCourses]);
+
+
+  const handleNavigate = (courseId) => {
+    navigate(`/courses/${courseId}`);
+  };
+
+  if (!user) {
+    return (
+      <Container className="mt-5">
+        <Alert variant="info">Please login to view your dashboard.</Alert>
+      </Container>
+    );
+  }
+
+  return (
+    <div className="home-container">
+      {/* Full-width Banner Section */}
+      <div className="banner-section">
+        <Swiper
+          slidesPerView={1}
+          spaceBetween={0}
+          centeredSlides={true}
+          loop={true}
+          autoplay={{
+            delay: 3500,
+            disableOnInteraction: false,
+          }}
+          pagination={{
+            clickable: true,
+            el: '.swiper-pagination',
+          }}
+          modules={[Autoplay, Pagination]}
+          className="banner-slider"
+        >
+          {bannerImages.map((image, index) => (
+            <SwiperSlide key={index}>
+              <img src={image} alt={`Banner ${index + 1}`} />
+            </SwiperSlide>
+          ))}
+          <div className="swiper-pagination"></div>
+        </Swiper>
+      </div>
+
+      <Container className='dashboard-container'>
+        <div className="dashboard-content">
+          {/* Stats Section */}
+          <div className="stats-section">
+            {statsCards.map(({ icon, type, label, key, color }) => (
+              <Card key={key} className={`stat-card ${type}`}>
+                <Card.Body>
+                  <div className="stat-icon" style={{ color }}>
+                    {icon}
+                  </div>
+                  <div className="stat-info">
+                    <h3>{stats[key]}</h3>
+                    <p>{label}</p>
+                  </div>
+                </Card.Body>
+              </Card>
+            ))}
+          </div>
+
+          {/* Loading State */}
+          {loading ? (
+            <div className="loading-state">
+              <Spinner animation="border" variant="primary" />
+            </div>
+          ) : error ? (
+            <Alert variant="danger">{error}</Alert>
+          ) : (
+            <>
+              {/* My Learning Section */}
+              <HorizontalCourseSlider
+                courses={enrollments}
+                title="My Learning"
+                tabData={stats}
+                onNavigate={handleNavigate}
+                isRecommended={false}
+              />
+
+              {/* Recommended Courses Section */}
+              <HorizontalCourseSlider
+                courses={filteredRecommendedCourses}
+                title="Recommended Courses"
+                onNavigate={handleNavigate}
+                isRecommended={true}
+              />
+            </>
+          )}
+        </div>
+      </Container>
+    </div>
+  );
+};
+
+export default Home;

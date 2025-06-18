@@ -1,0 +1,92 @@
+.user-registration-outer {
+  height: 100vh;
+  min-height: 100vh;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+} 
+
+.user-registration-image {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 50vw;
+  height: 100vh;
+  z-index: 1;
+  padding: 0;
+  margin: 0;
+}
+
+.user-registration-image .img-cover {
+  width: 100%;
+  height: 100vh;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.form-side {
+  margin-left: 50vw;
+  width: 50vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* background: #f5f6fa; */
+  overflow: hidden;
+  position: relative;
+  z-index: 2;
+}
+
+.user-registration-form {
+  width: 100%;
+  max-width: 450px;
+  background: #fff;
+  border-radius: 16px;
+  /* box-shadow: 0 2px 16px rgba(0,0,0,0.08); */
+  padding: 2rem;
+  overflow-y: auto;
+  max-height: 90vh;
+}
+
+@media (max-width: 991.98px) {
+  .user-registration-image {
+    display: none;
+  }
+  .form-side {
+    margin-left: 0;
+    width: 100vw;
+  }
+}
+
+.position-relative {
+  position: relative;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  cursor: pointer;
+  z-index: 2;
+  padding: 4px;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+.form-control {
+    padding: 1rem;
+    font-size: 1.1rem;
+}
+.form-select{
+    padding: 1rem;
+}
+
+.user-registration-form {
+  scrollbar-width: none; 
+  -ms-overflow-style: none;  
+}
+.user-registration-form::-webkit-scrollbar {
+  display: none;
+}

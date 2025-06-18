@@ -1,0 +1,269 @@
+.course-detail-page {
+  padding-top: 64px;
+  min-height: calc(100vh - 64px);
+  background: #f8f9fa;
+}
+
+.course-header {
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  color: white;
+  padding: 3rem 3rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.course-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.course-description {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.course-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.course-thumbnail {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Units Sidebar */
+.units-sidebar {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(44, 62, 80, 0.07);
+  padding: 1.5rem;
+  margin-left: 3rem;
+}
+
+.units-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.unit-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  border-radius: 8px;
+  background: #f8f9fa;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.unit-list-item:hover:not(.locked) {
+  background: #eaf6ff;
+  border-color: #e3f2fd;
+}
+
+.unit-list-item.active {
+  background: #e3f2fd;
+  border-color: #2196f3;
+}
+
+.unit-list-item.locked {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background: #f5f5f5;
+}
+
+.unit-info {
+  flex: 1;
+}
+
+.unit-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.unit-progress {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.unit-status {
+  font-size: 1.1em;
+}
+
+.unit-status.done {
+  color: #2ecc71;
+}
+
+.unit-status.locked {
+  color: #95a5a6;
+}
+
+/* Main Content Card */
+.unit-content-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(44, 62, 80, 0.07);
+  border: none;
+  margin-right: 3rem;
+  margin-bottom: 3rem;
+}
+
+.section-title {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #f0f2f5;
+}
+
+/* Lesson Accordion */
+.lesson-accordion .accordion-item {
+  border: none;
+  margin-bottom: 0.75rem;
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+.lesson-accordion .accordion-button {
+  background: #f8f9fa;
+  border: none;
+  padding: 1rem;
+  font-weight: 500;
+}
+
+.lesson-accordion .accordion-button:not(.collapsed) {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.lesson-accordion .accordion-button:focus {
+  box-shadow: none;
+  border-color: #e3f2fd;
+}
+
+.lesson-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.lesson-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lesson-duration {
+  font-size: 0.85rem;
+  padding: 0.25rem 0.75rem;
+}
+
+.lesson-content {
+  color: #4a5568;
+  line-height: 1.6;
+}
+
+/* Assignment Section */
+.assignment-section {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 2px solid #f0f2f5;
+}
+
+.assignment-card1 {
+  background: #f8f9fa;
+  border: none;
+  border-radius: 8px;
+}
+
+.assignment-title {
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.assignment-description {
+  color: #4a5568;
+  font-size: 0.95rem;
+}
+
+/* Progress Bar */
+.progress {
+  height: 0.75rem;
+  border-radius: 1rem;
+}
+
+.progress-bar {
+  background: #2ecc71;
+}
+
+/* Badges */
+.badge {
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  border-radius: 6px;
+}
+
+.unit-complete-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
+/* Buttons */
+.mark-complete-btn {
+  min-width: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.mark-complete-btn.completed {
+  background: #e8f5e9 !important;
+  border-color: #2ecc71 !important;
+  color: #2ecc71 !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .course-header {
+    padding: 2rem 0;
+  }
+
+  .course-header h1 {
+    font-size: 2rem;
+  }
+
+  .units-sidebar {
+    margin-bottom: 1.5rem;
+  }
+}
+
+
+.preview-lock-icon {
+  color: #6c757d;
+}
+
+.course-preview-card{
+  margin-left: 3rem;
+  margin-right: 3rem;
+}
