@@ -12,7 +12,7 @@ const uploadToCloudinary = require("../utils/uploadToCloudinary");
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 100 * 1024 * 1024 // 100MB limit
+    fileSize: 100 * 1024 * 1024 
   }
 });
 
@@ -621,14 +621,16 @@ if (updates.units) {
 });
 
 
-// In routes/Course.js
-// In routes/Course.js
+
 router.post(
   "/:courseId/units/:unitIndex/lessons/:lessonIndex/resources",
   upload.single("file"),
   async (req, res) => {
     try {
-      const { courseId, unitIndex, lessonIndex } = req.params;
+      const { courseId } = req.params;
+      // Convert indices to numbers
+      const unitIndex = Number(req.params.unitIndex);
+      const lessonIndex = Number(req.params.lessonIndex);
       const { type, title, url } = req.body;
       let resourceData = { type, title };
 
@@ -657,10 +659,16 @@ router.post(
       const course = await Course.findById(courseId);
       if (!course) return res.status(404).json({ message: "Course not found" });
 
-      if (!course.units[unitIndex].lessons[lessonIndex].resources) {
-        course.units[unitIndex].lessons[lessonIndex].resources = [];
-      }
-      course.units[unitIndex].lessons[lessonIndex].resources.push(resourceData);
+      // Defensive checks
+      const unit = course.units[unitIndex];
+      if (!unit) return res.status(404).json({ message: "Unit not found" });
+
+      const lesson = unit.lessons[lessonIndex];
+      if (!lesson) return res.status(404).json({ message: "Lesson not found" });
+
+      if (!lesson.resources) lesson.resources = [];
+      lesson.resources.push(resourceData);
+
       await course.save();
 
       res.json({ resource: resourceData });
@@ -670,7 +678,6 @@ router.post(
     }
   }
 );
-
 
 
 router.post('/:id/certificate-template', 

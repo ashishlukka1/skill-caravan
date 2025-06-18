@@ -16,6 +16,7 @@ import {
 import { FaPlus, FaTrash, FaFileAlt } from "react-icons/fa";
 import "./EditCourseById.css";
 import "../Certificates/AddCertificate";
+import { fileToBase64 } from "../../utils/fileBase64";
 
 const ResourceForm = ({ unitIndex, lessonIndex, onSubmit, onCancel }) => {
   const [type, setType] = useState("video_url");
@@ -194,25 +195,34 @@ const EditCourseById = () => {
     }));
   };
 
-  // --- Unit Management ---
-  const handleAddUnit = () => {
+  // --- Thumbnail Upload for Course ---
+  const handleCourseThumbnailChange = async (file) => {
+    if (!file) return;
+    const base64 = await fileToBase64(file);
     setCourse((prev) => ({
       ...prev,
-      units: [
-        ...prev.units,
-        {
-          title: "",
-          lessons: [],
-          assignment: { assignmentSets: [] },
-        },
-      ],
+      thumbnail: base64,
     }));
+  };
+
+  // --- Unit Management ---
+  const handleAddUnit = () => {
+    setCourse((prev) => {
+      const updated = { ...prev };
+      // Avoid mutating state directly
+      updated.units = [...updated.units, {
+        title: "",
+        lessons: [],
+        assignment: { assignmentSets: [] },
+      }];
+      return updated;
+    });
   };
 
   const handleRemoveUnit = (index) => {
     setCourse((prev) => {
       const updated = { ...prev };
-      updated.units.splice(index, 1);
+      updated.units = updated.units.filter((_, i) => i !== index);
       return updated;
     });
   };
@@ -220,7 +230,9 @@ const EditCourseById = () => {
   const handleUnitChange = (unitIndex, field, value) => {
     setCourse((prev) => {
       const updated = { ...prev };
-      updated.units[unitIndex][field] = value;
+      updated.units = updated.units.map((unit, idx) =>
+        idx === unitIndex ? { ...unit, [field]: value } : unit
+      );
       return updated;
     });
   };
@@ -229,13 +241,23 @@ const EditCourseById = () => {
   const handleAddLesson = (unitIndex) => {
     setCourse((prev) => {
       const updated = { ...prev };
-      updated.units[unitIndex].lessons.push({
-        title: "",
-        content: "",
-        videoUrl: "",
-        duration: 0,
-        resources: [],
-      });
+      updated.units = updated.units.map((unit, idx) =>
+        idx === unitIndex
+          ? {
+              ...unit,
+              lessons: [
+                ...unit.lessons,
+                {
+                  title: "",
+                  content: "",
+                  videoUrl: "",
+                  duration: 0,
+                  resources: [],
+                },
+              ],
+            }
+          : unit
+      );
       return updated;
     });
   };
@@ -243,7 +265,14 @@ const EditCourseById = () => {
   const handleRemoveLesson = (unitIndex, lessonIndex) => {
     setCourse((prev) => {
       const updated = { ...prev };
-      updated.units[unitIndex].lessons.splice(lessonIndex, 1);
+      updated.units = updated.units.map((unit, idx) =>
+        idx === unitIndex
+          ? {
+              ...unit,
+              lessons: unit.lessons.filter((_, i) => i !== lessonIndex),
+            }
+          : unit
+      );
       return updated;
     });
   };
@@ -251,7 +280,16 @@ const EditCourseById = () => {
   const handleLessonChange = (unitIndex, lessonIndex, field, value) => {
     setCourse((prev) => {
       const updated = { ...prev };
-      updated.units[unitIndex].lessons[lessonIndex][field] = value;
+      updated.units = updated.units.map((unit, idx) =>
+        idx === unitIndex
+          ? {
+              ...unit,
+              lessons: unit.lessons.map((lesson, lidx) =>
+                lidx === lessonIndex ? { ...lesson, [field]: value } : lesson
+              ),
+            }
+          : unit
+      );
       return updated;
     });
   };
@@ -260,14 +298,26 @@ const EditCourseById = () => {
   const handleAddAssignmentSet = (unitIndex) => {
     setCourse((prev) => {
       const updated = { ...prev };
-      updated.units[unitIndex].assignment.assignmentSets.push({
-        setNumber:
-          updated.units[unitIndex].assignment.assignmentSets.length + 1,
-        title: "",
-        description: "",
-        difficulty: "easy",
-        questions: [],
-      });
+      updated.units = updated.units.map((unit, idx) =>
+        idx === unitIndex
+          ? {
+              ...unit,
+              assignment: {
+                ...unit.assignment,
+                assignmentSets: [
+                  ...unit.assignment.assignmentSets,
+                  {
+                    setNumber: unit.assignment.assignmentSets.length + 1,
+                    title: "",
+                    description: "",
+                    difficulty: "easy",
+                    questions: [],
+                  },
+                ],
+              },
+            }
+          : unit
+      );
       return updated;
     });
   };
@@ -275,7 +325,19 @@ const EditCourseById = () => {
   const handleRemoveAssignmentSet = (unitIndex, setIndex) => {
     setCourse((prev) => {
       const updated = { ...prev };
-      updated.units[unitIndex].assignment.assignmentSets.splice(setIndex, 1);
+      updated.units = updated.units.map((unit, idx) =>
+        idx === unitIndex
+          ? {
+              ...unit,
+              assignment: {
+                ...unit.assignment,
+                assignmentSets: unit.assignment.assignmentSets.filter(
+                  (_, i) => i !== setIndex
+                ),
+              },
+            }
+          : unit
+      );
       return updated;
     });
   };
@@ -283,8 +345,20 @@ const EditCourseById = () => {
   const handleAssignmentSetChange = (unitIndex, setIndex, field, value) => {
     setCourse((prev) => {
       const updated = { ...prev };
-      updated.units[unitIndex].assignment.assignmentSets[setIndex][field] =
-        value;
+      updated.units = updated.units.map((unit, idx) =>
+        idx === unitIndex
+          ? {
+              ...unit,
+              assignment: {
+                ...unit.assignment,
+                assignmentSets: unit.assignment.assignmentSets.map(
+                  (set, sidx) =>
+                    sidx === setIndex ? { ...set, [field]: value } : set
+                ),
+              },
+            }
+          : unit
+      );
       return updated;
     });
   };
@@ -293,16 +367,33 @@ const EditCourseById = () => {
   const handleAddQuestion = (unitIndex, setIndex = null) => {
     setCourse((prev) => {
       const updated = { ...prev };
-      if (setIndex !== null) {
-        updated.units[unitIndex].assignment.assignmentSets[
-          setIndex
-        ].questions.push({
-          questionText: "",
-          options: ["", "", "", ""],
-          correctAnswer: "0",
-          marks: 1,
-        });
-      }
+      updated.units = updated.units.map((unit, idx) =>
+        idx === unitIndex
+          ? {
+              ...unit,
+              assignment: {
+                ...unit.assignment,
+                assignmentSets: unit.assignment.assignmentSets.map(
+                  (set, sidx) =>
+                    sidx === setIndex
+                      ? {
+                          ...set,
+                          questions: [
+                            ...set.questions,
+                            {
+                              questionText: "",
+                              options: ["", "", "", ""],
+                              correctAnswer: "0",
+                              marks: 1,
+                            },
+                          ],
+                        }
+                      : set
+                ),
+              },
+            }
+          : unit
+      );
       return updated;
     });
   };
@@ -310,11 +401,27 @@ const EditCourseById = () => {
   const handleRemoveQuestion = (unitIndex, questionIndex, setIndex = null) => {
     setCourse((prev) => {
       const updated = { ...prev };
-      if (setIndex !== null) {
-        updated.units[unitIndex].assignment.assignmentSets[
-          setIndex
-        ].questions.splice(questionIndex, 1);
-      }
+      updated.units = updated.units.map((unit, idx) =>
+        idx === unitIndex
+          ? {
+              ...unit,
+              assignment: {
+                ...unit.assignment,
+                assignmentSets: unit.assignment.assignmentSets.map(
+                  (set, sidx) =>
+                    sidx === setIndex
+                      ? {
+                          ...set,
+                          questions: set.questions.filter(
+                            (_, qidx) => qidx !== questionIndex
+                          ),
+                        }
+                      : set
+                ),
+              },
+            }
+          : unit
+      );
       return updated;
     });
   };
@@ -328,11 +435,29 @@ const EditCourseById = () => {
   ) => {
     setCourse((prev) => {
       const updated = { ...prev };
-      if (setIndex !== null) {
-        updated.units[unitIndex].assignment.assignmentSets[setIndex].questions[
-          questionIndex
-        ][field] = value;
-      }
+      updated.units = updated.units.map((unit, idx) =>
+        idx === unitIndex
+          ? {
+              ...unit,
+              assignment: {
+                ...unit.assignment,
+                assignmentSets: unit.assignment.assignmentSets.map(
+                  (set, sidx) =>
+                    sidx === setIndex
+                      ? {
+                          ...set,
+                          questions: set.questions.map((q, qidx) =>
+                            qidx === questionIndex
+                              ? { ...q, [field]: value }
+                              : q
+                          ),
+                        }
+                      : set
+                ),
+              },
+            }
+          : unit
+      );
       return updated;
     });
   };
@@ -352,11 +477,23 @@ const EditCourseById = () => {
       );
       setCourse((prev) => {
         const updated = { ...prev };
-        if (!updated.units[unitIndex].lessons[lessonIndex].resources) {
-          updated.units[unitIndex].lessons[lessonIndex].resources = [];
-        }
-        updated.units[unitIndex].lessons[lessonIndex].resources.push(
-          response.data.resource
+        updated.units = updated.units.map((unit, uidx) =>
+          uidx === unitIndex
+            ? {
+                ...unit,
+                lessons: unit.lessons.map((lesson, lidx) =>
+                  lidx === lessonIndex
+                    ? {
+                        ...lesson,
+                        resources: [
+                          ...(lesson.resources || []),
+                          response.data.resource,
+                        ],
+                      }
+                    : lesson
+                ),
+              }
+            : unit
         );
         return updated;
       });
@@ -373,9 +510,22 @@ const EditCourseById = () => {
   const handleRemoveResource = (unitIndex, lessonIndex, resourceIndex) => {
     setCourse((prev) => {
       const updated = { ...prev };
-      updated.units[unitIndex].lessons[lessonIndex].resources.splice(
-        resourceIndex,
-        1
+      updated.units = updated.units.map((unit, uidx) =>
+        uidx === unitIndex
+          ? {
+              ...unit,
+              lessons: unit.lessons.map((lesson, lidx) =>
+                lidx === lessonIndex
+                  ? {
+                      ...lesson,
+                      resources: lesson.resources.filter(
+                        (_, ridx) => ridx !== resourceIndex
+                      ),
+                    }
+                  : lesson
+              ),
+            }
+          : unit
       );
       return updated;
     });
@@ -440,7 +590,7 @@ const EditCourseById = () => {
 
   if (loading) {
     return (
-      <div className="text-center py-5">
+      <div className="text-center py-5 mt-5 min-vh-100">
         <Spinner animation="border" role="status">
           <span className="visually-hidden">Loading...</span>
         </Spinner>
@@ -459,8 +609,8 @@ const EditCourseById = () => {
   const hasCertificate = course?.certificate?.templateUrl;
 
   return (
-    <Container className="py-4">
-      <h2 className="mb-4 text-center">Edit Course</h2>
+    <Container className="py-4 mt-3">
+      <h2 className="mb-4 mt-5 text-center">Edit Course</h2>
       <Row className="justify-content-center">
         <Col md={10} lg={8}>
           {error && <Alert variant="danger">{error}</Alert>}
@@ -547,6 +697,26 @@ const EditCourseById = () => {
                     rows={3}
                     placeholder="Course Description"
                   />
+                </Form.Group>
+                {/* Course Thumbnail */}
+                <Form.Group className="mb-3">
+                  <Form.Label>Course Thumbnail</Form.Label>
+                  <Form.Control
+                    type="file"
+                    accept="image/*"
+                    onChange={async (e) =>
+                      await handleCourseThumbnailChange(e.target.files[0])
+                    }
+                  />
+                  {course.thumbnail && (
+                    <div className="mt-2">
+                      <img
+                        src={course.thumbnail}
+                        alt="Course Thumbnail"
+                        style={{ maxWidth: "200px", maxHeight: "120px" }}
+                      />
+                    </div>
+                  )}
                 </Form.Group>
                 {hasCertificate ? (
                   <div className="mb-3">
@@ -1045,4 +1215,4 @@ const EditCourseById = () => {
   );
 };
 
-export  default EditCourseById;
+export default EditCourseById;

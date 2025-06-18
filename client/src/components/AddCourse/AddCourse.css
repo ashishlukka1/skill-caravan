@@ -4,11 +4,8 @@
   min-height: calc(100vh - 64px);
   margin-left: 3rem;
   margin-right: 3rem;
-  margin-top: 3rem;
+  margin-top: 6rem;
 }
-
-
-
 
 
 .unit-section {
@@ -78,7 +75,6 @@
   color: #4b5563;
 }
 
-
 .btn-primary {
   background-color: #4f46e5;
   border-color: #4f46e5;
@@ -131,7 +127,6 @@
   border-radius: 4px;
   background: white;
 }
-
 
 .resources-section {
   background: #f8f9fa;

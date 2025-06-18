@@ -13,6 +13,8 @@ import {
   Accordion,
 } from "react-bootstrap";
 import { FaPlus, FaTrash, FaFileAlt } from "react-icons/fa";
+import { fileToBase64 } from "../../utils/fileBase64";
+import "./AddCourse.css";
 
 const AddCourse = () => {
   const navigate = useNavigate();
@@ -37,6 +39,16 @@ const AddCourse = () => {
     setCourse((prev) => ({
       ...prev,
       [name]: value,
+    }));
+  };
+
+  // --- Thumbnail Upload for Course ---
+  const handleCourseThumbnailChange = async (file) => {
+    if (!file) return;
+    const base64 = await fileToBase64(file);
+    setCourse((prev) => ({
+      ...prev,
+      thumbnail: base64,
     }));
   };
 
@@ -186,8 +198,9 @@ const AddCourse = () => {
               ...unit,
               assignment: {
                 ...unit.assignment,
-                assignmentSets: unit.assignment.assignmentSets.map((set, sidx) =>
-                  sidx === setIndex ? { ...set, [field]: value } : set
+                assignmentSets: unit.assignment.assignmentSets.map(
+                  (set, sidx) =>
+                    sidx === setIndex ? { ...set, [field]: value } : set
                 ),
               },
             }
@@ -207,21 +220,22 @@ const AddCourse = () => {
               ...unit,
               assignment: {
                 ...unit.assignment,
-                assignmentSets: unit.assignment.assignmentSets.map((set, sidx) =>
-                  sidx === setIndex
-                    ? {
-                        ...set,
-                        questions: [
-                          ...set.questions,
-                          {
-                            questionText: "",
-                            options: ["", "", "", ""],
-                            correctAnswer: "0",
-                            marks: 1,
-                          },
-                        ],
-                      }
-                    : set
+                assignmentSets: unit.assignment.assignmentSets.map(
+                  (set, sidx) =>
+                    sidx === setIndex
+                      ? {
+                          ...set,
+                          questions: [
+                            ...set.questions,
+                            {
+                              questionText: "",
+                              options: ["", "", "", ""],
+                              correctAnswer: "0",
+                              marks: 1,
+                            },
+                          ],
+                        }
+                      : set
                 ),
               },
             }
@@ -240,15 +254,16 @@ const AddCourse = () => {
               ...unit,
               assignment: {
                 ...unit.assignment,
-                assignmentSets: unit.assignment.assignmentSets.map((set, sidx) =>
-                  sidx === setIndex
-                    ? {
-                        ...set,
-                        questions: set.questions.filter(
-                          (_, qidx) => qidx !== questionIndex
-                        ),
-                      }
-                    : set
+                assignmentSets: unit.assignment.assignmentSets.map(
+                  (set, sidx) =>
+                    sidx === setIndex
+                      ? {
+                          ...set,
+                          questions: set.questions.filter(
+                            (_, qidx) => qidx !== questionIndex
+                          ),
+                        }
+                      : set
                 ),
               },
             }
@@ -273,15 +288,18 @@ const AddCourse = () => {
               ...unit,
               assignment: {
                 ...unit.assignment,
-                assignmentSets: unit.assignment.assignmentSets.map((set, sidx) =>
-                  sidx === setIndex
-                    ? {
-                        ...set,
-                        questions: set.questions.map((q, qidx) =>
-                          qidx === questionIndex ? { ...q, [field]: value } : q
-                        ),
-                      }
-                    : set
+                assignmentSets: unit.assignment.assignmentSets.map(
+                  (set, sidx) =>
+                    sidx === setIndex
+                      ? {
+                          ...set,
+                          questions: set.questions.map((q, qidx) =>
+                            qidx === questionIndex
+                              ? { ...q, [field]: value }
+                              : q
+                          ),
+                        }
+                      : set
                 ),
               },
             }
@@ -302,7 +320,7 @@ const AddCourse = () => {
       const response = await axios.post("/api/courses", course);
       setSuccess("Course created successfully!");
       setTimeout(() => {
-        navigate(`/courses/${response.data.course._id}/edit`);
+        navigate(`/courses`);
       }, 1500);
     } catch (err) {
       setError(
@@ -316,7 +334,7 @@ const AddCourse = () => {
 
   // --- Render ---
   return (
-    <Container className="py-4">
+    <Container className="py-5 mt-5">
       <h2 className="mb-4 text-center">Add New Course</h2>
       <Row className="justify-content-center">
         <Col md={10} lg={8}>
@@ -345,7 +363,7 @@ const AddCourse = () => {
                         name="category"
                         value={course.category}
                         onChange={handleBasicInfoChange}
-                      > 
+                      >
                         <option>Web Development</option>
                         <option>Data Science</option>
                         <option>AI/ML</option>
@@ -385,7 +403,9 @@ const AddCourse = () => {
                         onChange={(e) =>
                           setCourse((prev) => ({
                             ...prev,
-                            tags: e.target.value.split(",").map((t) => t.trim()),
+                            tags: e.target.value
+                              .split(",")
+                              .map((t) => t.trim()),
                           }))
                         }
                         placeholder="e.g. javascript, react, backend"
@@ -404,6 +424,26 @@ const AddCourse = () => {
                     rows={3}
                     placeholder="Course Description"
                   />
+                </Form.Group>
+                {/* Course Thumbnail */}
+                <Form.Group className="mb-3">
+                  <Form.Label>Course Thumbnail</Form.Label>
+                  <Form.Control
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) =>
+                      handleCourseThumbnailChange(e.target.files[0])
+                    }
+                  />
+                  {course.thumbnail && (
+                    <div className="mt-2">
+                      <img
+                        src={course.thumbnail}
+                        alt="Course Thumbnail"
+                        style={{ maxWidth: "200px", maxHeight: "120px" }}
+                      />
+                    </div>
+                  )}
                 </Form.Group>
               </Card.Body>
             </Card>
@@ -426,7 +466,11 @@ const AddCourse = () => {
                           <Form.Control
                             value={unit.title}
                             onChange={(e) =>
-                              handleUnitChange(unitIndex, "title", e.target.value)
+                              handleUnitChange(
+                                unitIndex,
+                                "title",
+                                e.target.value
+                              )
                             }
                             required
                             placeholder="Unit Title"
@@ -521,8 +565,9 @@ const AddCourse = () => {
                             </Form.Group>
                             <div className="resources-section">
                               <div className="alert alert-warning mb-0">
-                                <FaFileAlt className="mb-2" size={18} />{" "}
-                                Please create the course first, then add resources to lessons from the Edit Course page.
+                                <FaFileAlt className="mb-2" size={18} /> Please
+                                create the course first, then add resources to
+                                lessons from the Edit Course page.
                               </div>
                             </div>
                           </Accordion.Body>
@@ -574,7 +619,10 @@ const AddCourse = () => {
                                   <Button
                                     variant="outline-danger"
                                     onClick={() =>
-                                      handleRemoveAssignmentSet(unitIndex, setIndex)
+                                      handleRemoveAssignmentSet(
+                                        unitIndex,
+                                        setIndex
+                                      )
                                     }
                                     size="sm"
                                   >
@@ -626,7 +674,10 @@ const AddCourse = () => {
                                   >
                                     <Accordion.Header>
                                       {q.questionText
-                                        ? q.questionText.slice(0, 30) + (q.questionText.length > 30 ? "..." : "")
+                                        ? q.questionText.slice(0, 30) +
+                                          (q.questionText.length > 30
+                                            ? "..."
+                                            : "")
                                         : `Question ${qIdx + 1}`}
                                     </Accordion.Header>
                                     <Accordion.Body>
@@ -649,12 +700,16 @@ const AddCourse = () => {
                                       </Form.Group>
                                       <Form.Label>Options</Form.Label>
                                       {q.options.map((opt, optIdx) => (
-                                        <Form.Group className="mb-2" key={optIdx}>
+                                        <Form.Group
+                                          className="mb-2"
+                                          key={optIdx}
+                                        >
                                           <Form.Control
                                             value={opt}
                                             onChange={(e) => {
                                               const newOptions = [...q.options];
-                                              newOptions[optIdx] = e.target.value;
+                                              newOptions[optIdx] =
+                                                e.target.value;
                                               handleQuestionChange(
                                                 unitIndex,
                                                 qIdx,
@@ -669,7 +724,9 @@ const AddCourse = () => {
                                         </Form.Group>
                                       ))}
                                       <Form.Group className="mb-2">
-                                        <Form.Label>Correct Answer (option number)</Form.Label>
+                                        <Form.Label>
+                                          Correct Answer (option number)
+                                        </Form.Label>
                                         <Form.Select
                                           value={q.correctAnswer}
                                           onChange={(e) =>
@@ -713,7 +770,11 @@ const AddCourse = () => {
                                           variant="outline-danger"
                                           size="sm"
                                           onClick={() =>
-                                            handleRemoveQuestion(unitIndex, qIdx, setIndex)
+                                            handleRemoveQuestion(
+                                              unitIndex,
+                                              qIdx,
+                                              setIndex
+                                            )
                                           }
                                         >
                                           <FaTrash /> Remove Question
@@ -727,7 +788,9 @@ const AddCourse = () => {
                                 <Button
                                   variant="outline-success"
                                   size="sm"
-                                  onClick={() => handleAddQuestion(unitIndex, setIndex)}
+                                  onClick={() =>
+                                    handleAddQuestion(unitIndex, setIndex)
+                                  }
                                 >
                                   <FaPlus className="me-1" /> Add Question
                                 </Button>
@@ -756,7 +819,12 @@ const AddCourse = () => {
               </Button>
             </div>
             <div className="mt-4 text-center">
-              <Button type="submit" variant="primary" disabled={loading} size="lg">
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={loading}
+                size="lg"
+              >
                 {loading ? (
                   <>
                     <Spinner
@@ -773,7 +841,7 @@ const AddCourse = () => {
                   "Create Course"
                 )}
               </Button>
-              </div>
+            </div>
           </Form>
         </Col>
       </Row>
