@@ -7,7 +7,7 @@ const morgan = require("morgan");
 dotenv.config();
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 app.use(cors({
   origin: ["https://skill-caravan.vercel.app", "http://localhost:3000"],
