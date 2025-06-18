@@ -23,22 +23,35 @@ router.get("/search", async (req, res) => {
     const limit = parseInt(req.query.limit) || 8;
 
     if (!q || q.length < 2) {
-      return res.json([]); // Don't search for empty/short queries
+      return res.json([]);
     }
 
-    // Search in title, tags, category, and instructor name (if populated)
-    const courses = await Course.find({
-      $or: [
-        { title: { $regex: q, $options: "i" } },
-        { tags: { $regex: q, $options: "i" } },
-        { category: { $regex: q, $options: "i" } }
-      ]
+    // 1. Find courses where the title matches
+    let titleMatches = await Course.find({
+      title: { $regex: q, $options: "i" }
     })
       .populate({ path: "instructor", select: "name" })
       .select("title instructor tags duration level thumbnail price isPaid rating reviewCount category")
       .limit(limit);
 
-    res.json(courses);
+    // 2. If not enough, find more by tags/category (excluding already found)
+    if (titleMatches.length < limit) {
+      const excludeIds = titleMatches.map(c => c._id);
+      const otherMatches = await Course.find({
+        _id: { $nin: excludeIds },
+        $or: [
+          { tags: { $regex: q, $options: "i" } },
+          { category: { $regex: q, $options: "i" } }
+        ]
+      })
+        .populate({ path: "instructor", select: "name" })
+        .select("title instructor tags duration level thumbnail price isPaid rating reviewCount category")
+        .limit(limit - titleMatches.length);
+
+      titleMatches = titleMatches.concat(otherMatches);
+    }
+
+    res.json(titleMatches);
   } catch (err) {
     console.error("Course search error:", err);
     res.status(500).json({ message: "Error searching courses" });
@@ -95,20 +108,23 @@ router.post("/:courseId/assignment/:unitIndex/submit", authMiddleware, async (re
 
     const course = await Course.findById(courseId);
     const user = await User.findById(req.user._id);
-    
-    const enrollment = user.enrolledCourses.find(
-      e => e.course.toString() === courseId
-    );
+    const enrollment = user.enrolledCourses.find(e => e.course.toString() === courseId);
 
-    if (!enrollment) {
-      return res.status(404).json({ message: "Not enrolled in this course" });
-    }
+    if (!enrollment) return res.status(404).json({ message: "Not enrolled in this course" });
 
     const unitProgress = enrollment.unitsProgress[unitIndex];
+    if (!unitProgress || !unitProgress.assignment) {
+      return res.status(404).json({ message: "Assignment not initialized for this unit" });
+    }
+
     const assignedSetNumber = unitProgress.assignment.assignedSetNumber;
-    
-    const assignmentSet = course.units[unitIndex].assignment.assignmentSets
-      .find(set => set.setNumber === assignedSetNumber);
+    const assignmentSets = course.units[unitIndex].assignment.assignmentSets;
+    let assignmentSet = assignmentSets.find(set => set.setNumber === assignedSetNumber);
+
+    // Defensive: If only one set, always use it
+    if (!assignmentSet && assignmentSets.length === 1) {
+      assignmentSet = assignmentSets[0];
+    }
 
     if (!assignmentSet) {
       return res.status(404).json({ message: "Assignment set not found" });
@@ -117,70 +133,71 @@ router.post("/:courseId/assignment/:unitIndex/submit", authMiddleware, async (re
     // Calculate score
     let score = 0;
     const totalPossibleScore = assignmentSet.questions.reduce((acc, q) => acc + q.marks, 0);
-    
+
     submission.forEach((answer, idx) => {
       const question = assignmentSet.questions[idx];
-      if (question && answer.toString() === question.correctAnswer.toString()) {
+      if (question && answer?.toString() === question.correctAnswer?.toString()) {
         score += question.marks;
       }
     });
 
-    // Update attempt information
+    // Update assignment progress
     unitProgress.assignment.status = "submitted";
     unitProgress.assignment.submittedAt = new Date();
     unitProgress.assignment.submission = submission;
     unitProgress.assignment.score = score;
     unitProgress.assignment.attemptCount = (unitProgress.assignment.attemptCount || 0) + 1;
 
-    // Only update progress if perfect score
+    // If perfect score, mark unit as completed
     if (score === totalPossibleScore) {
       unitProgress.completed = true;
-       unitProgress.assignment.status = "submitted";
+      unitProgress.assignment.status = "submitted";
       unitProgress.assignment.assignedSetNumber = null; // Prevent further attempts
-      
-      // Update overall progress
+
+      // Update overall course progress
       enrollment.progress = Math.round(
-        (enrollment.unitsProgress.filter(u => u.completed).length / 
-         enrollment.unitsProgress.length) * 100
+        (enrollment.unitsProgress.filter(u => u.completed).length /
+          enrollment.unitsProgress.length) * 100
       );
 
+      // If all units completed, mark course as completed
+      if (enrollment.progress === 100) {
+        enrollment.status = "completed";
+      }
+
+      // Certificate logic
       if (
-          enrollment.progress === 100 &&
-          (enrollment.status === "completed" || enrollment.status === "active") && // adjust as per your logic
-          (!enrollment.certificate || !enrollment.certificate.issued)
+        enrollment.progress === 100 &&
+        (!enrollment.certificate || !enrollment.certificate.issued)
+      ) {
+        const courseWithCert = await Course.findById(courseId);
+        if (
+          courseWithCert.certificate &&
+          courseWithCert.certificate.templateUrl &&
+          courseWithCert.certificate.textSettings
         ) {
-          // Fetch course with certificate template
-          const courseWithCert = await Course.findById(courseId);
-          if (
-            courseWithCert.certificate &&
-            courseWithCert.certificate.templateUrl &&
-            courseWithCert.certificate.textSettings
-          ) {
-            try {
-              const certResult = await generateAndUploadCertificate(
-                courseWithCert.certificate.templateUrl,
-                courseWithCert.certificate.textSettings,
-                user.name,
-                `certificates/${user._id}`
-              );
-              // Save certificate info in enrollment
-              enrollment.certificate = {
-                issued: true,
-                issuedAt: new Date(),
-                certificateId: certResult.public_id,
-                certificateUrl: certResult.url,
-                storageUrl: certResult.public_id
-              };
-              await user.save();
-            } catch (certErr) {
-              console.error("Certificate generation error:", certErr);
-              // Optionally: don't throw, just log
-            }
+          try {
+            const certResult = await generateAndUploadCertificate(
+              courseWithCert.certificate.templateUrl,
+              courseWithCert.certificate.textSettings,
+              user.name, 
+              `certificates/${user._id}`
+            );
+            enrollment.certificate = {
+              issued: true,
+              issuedAt: new Date(),
+              certificateId: certResult.public_id,
+              certificateUrl: certResult.url,
+              storageUrl: certResult.public_id
+            };
+            await user.save();
+          } catch (certErr) {
+            console.error("Certificate generation error:", certErr);
           }
         }
-
+      }
     } else {
-      // If not perfect score, don't mark as completed
+      // Not perfect score: unit not completed, allow retry/other set
       unitProgress.completed = false;
     }
 

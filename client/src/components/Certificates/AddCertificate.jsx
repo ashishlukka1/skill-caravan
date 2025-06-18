@@ -109,32 +109,41 @@ const AddCertificate = () => {
           <div className="d-flex flex-wrap">
             <div style={{ flex: 2, minWidth: 350 }}>
               <div style={{ position: "relative", width: 500, height: 350, margin: "auto" }}>
-                {previewUrl && (
-                  <img
-                    src={previewUrl}
-                    alt="Certificate Template"
-                    ref={imgRef}
-                    style={{ width: "100%", height: "auto", cursor: "crosshair" }}
-                    onClick={handleImageClick}
-                  />
-                )}
-                {previewUrl && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      left: namePosition.x,
-                      top: namePosition.y,
-                      fontFamily: font.family,
-                      fontSize: font.size,
-                      color: font.color,
-                      fontWeight: "bold",
-                      pointerEvents: "none"
-                    }}
-                  >
-                    John Doe
-                  </div>
-                )}
-              </div>
+  {previewUrl && (
+    <img
+      src={previewUrl}
+      alt="Certificate Template"
+      ref={imgRef}
+      style={{ width: "100%", height: "auto", cursor: "crosshair" }}
+      onClick={e => {
+        const rect = imgRef.current.getBoundingClientRect();
+        // Calculate scale factors
+        const scaleX = imgRef.current.naturalWidth / rect.width;
+        const scaleY = imgRef.current.naturalHeight / rect.height;
+        // Scale the click position to original image size
+        const x = Math.round((e.clientX - rect.left) * scaleX);
+        const y = Math.round((e.clientY - rect.top) * scaleY);
+        setNamePosition({ x, y });
+      }}
+    />
+  )}
+  {previewUrl && (
+    <div
+  style={{
+    position: "absolute",
+    left: namePosition.x * (500 / (imgRef.current?.naturalWidth || 500)),
+    top: namePosition.y * (350 / (imgRef.current?.naturalHeight || 350)),
+    fontFamily: font.family,
+    fontSize: font.size * (500 / (imgRef.current?.naturalWidth || 500)),
+    color: font.color,
+    fontWeight: "bold",
+    pointerEvents: "none"
+  }}
+>
+  John Doe
+</div>  
+  )}
+</div>
               <div className="text-center mt-2">
                 <small>
                   Click on the certificate image to set the <b>name</b> position.

@@ -221,14 +221,21 @@ const CourseDetail = () => {
   };
 
   const getAssignmentButtonText = (unitIdx, unitProgress, unit) => {
-    const isUnitUnlocked = unitIdx === 0 || progress?.unitsProgress?.[unitIdx - 1]?.completed;
-    if (!isUnitUnlocked) return "Complete previous unit first";
-    if (!areAllLessonsCompleted(unitIdx)) return "Complete all lessons first";
-    if (isAssignmentPerfect(unit, unitProgress)) return "Assignment Complete";
-    if (!unitProgress?.assignment?.assignedSetNumber) return "Start Assignment";
-    if (unitProgress?.assignment?.status === "submitted") return "Review Assignment";
-    return "Continue Assignment";
-  };
+  const isUnitUnlocked = unitIdx === 0 || progress?.unitsProgress?.[unitIdx - 1]?.completed;
+  if (!isUnitUnlocked) return "Complete previous unit first";
+  if (!areAllLessonsCompleted(unitIdx)) return "Complete all lessons first";
+  const totalScore = getAssignedSetTotalScore(unit, unitProgress);
+  if (
+    unitProgress?.assignment?.status === "submitted" &&
+    unitProgress?.assignment?.score !== totalScore
+  ) {
+    return "Retake Assignment";
+  }
+  if (isAssignmentPerfect(unit, unitProgress)) return "Assignment Complete";
+  if (!unitProgress?.assignment?.assignedSetNumber) return "Start Assignment";
+  if (unitProgress?.assignment?.status === "submitted") return "Review Assignment";
+  return "Continue Assignment";
+};
 
   const renderAssignment = (unit, unitIdx) => {
     if (!unit.assignment?.assignmentSets?.length) return null;

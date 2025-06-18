@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useMemo, useRef } from 'react';
-import { Container, Row, Col, Card, Nav, Spinner, Alert, Badge, Tab } from 'react-bootstrap';
+import { Container, Card, Spinner, Alert, Badge } from 'react-bootstrap';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { FaGraduationCap, FaCheck, FaBookOpen, FaTasks, FaChevronRight, FaPlay, FaChevronLeft } from 'react-icons/fa';
 import { useNavigate, Link } from 'react-router-dom';
@@ -52,8 +52,8 @@ const statsCards = [
   }
 ];
 
-const CourseCard = ({ enrollment, course, onNavigate, isRecommended = false }) => {
-  const { user } = useContext(AuthContext); // Add this line
+const CourseCard = ({ enrollment, course, onNavigate }) => {
+  const { user } = useContext(AuthContext);
   const courseData = enrollment?.course || course;
   
   // Check if user is enrolled in this course
@@ -68,14 +68,11 @@ const CourseCard = ({ enrollment, course, onNavigate, isRecommended = false }) =
   const buttonText = isEnrolled ? 'Resume' : 'Enroll';
   const buttonClass = `btn-horizontal-resume ${isEnrolled ? 'enrolled' : ''}`;
 
-  
   const calculateLastUnit = (enrollment) => {
     if (!enrollment?.unitsProgress?.length) return 'Start Course';
-    
     const lastAccessedUnit = enrollment.unitsProgress
       .filter(u => u?.completed)
       .sort((a, b) => new Date(b?.lastAccessed || 0) - new Date(a?.lastAccessed || 0))[0];
-    
     return lastAccessedUnit ? `Unit ${lastAccessedUnit.unitIndex + 1}` : 'Start Course';
   };
 
@@ -95,11 +92,6 @@ const CourseCard = ({ enrollment, course, onNavigate, isRecommended = false }) =
           <Badge className="horizontal-category-badge">
             {courseData?.category || 'General'}
           </Badge>
-          {/* {isEnrolled && (
-            <Badge className="enrollment-badge bg-success">
-              Enrolled
-            </Badge>
-          )} */}
         </div>
       </div>
       <Card.Body className="horizontal-course-body">
@@ -121,49 +113,39 @@ const CourseCard = ({ enrollment, course, onNavigate, isRecommended = false }) =
   );
 };
 
-const HorizontalCourseSlider = ({ courses, title, tabData, onNavigate, isRecommended = false }) => {
+const HorizontalCourseSlider = ({ courses, title, tabData, onNavigate }) => {
   const [activeTab, setActiveTab] = useState('inProgress');
   const swiperRef = useRef(null);
 
   const filteredCourses = useMemo(() => {
-    if (isRecommended) return courses;
     return courses.filter(e => 
       activeTab === 'completed' ? 
         e.status === 'completed' : 
         e.status === 'active'
     );
-  }, [courses, activeTab, isRecommended]);
+  }, [courses, activeTab]);
 
   return (
     <div className="horizontal-courses-section">
       <div className="horizontal-section-header">
         <h2>{title}</h2>
-        {!isRecommended && (
-          <div className="horizontal-navigation">
-            <button 
-              className="nav-arrow nav-prev"
-              onClick={() => swiperRef.current?.swiper?.slidePrev()}
-            >
-              <FaChevronLeft />
-            </button>
-            <button 
-              className="nav-arrow nav-next"
-              onClick={() => swiperRef.current?.swiper?.slideNext()}
-            >
-              <FaChevronRight />
-            </button>
-          </div>
-        )}
-        {isRecommended && (
-          <div className="horizontal-navigation">
-            <Link to="/courses" className="view-all-link">
-              View All
-            </Link>
-          </div>
-        )}
+        <div className="horizontal-navigation">
+          <button 
+            className="nav-arrow nav-prev"
+            onClick={() => swiperRef.current?.swiper?.slidePrev()}
+          >
+            <FaChevronLeft />
+          </button>
+          <button 
+            className="nav-arrow nav-next"
+            onClick={() => swiperRef.current?.swiper?.slideNext()}
+          >
+            <FaChevronRight />
+          </button>
+        </div>
       </div>
       
-      {!isRecommended && tabData && (
+      {tabData && (
         <div className="horizontal-tabs-container">
           <div className="horizontal-tabs">
             <button 
@@ -181,7 +163,6 @@ const HorizontalCourseSlider = ({ courses, title, tabData, onNavigate, isRecomme
               <Badge className="horizontal-tab-badge">{tabData.completedCourses}</Badge>
             </button>
           </div>
-          
         </div>
       )}
 
@@ -211,7 +192,7 @@ const HorizontalCourseSlider = ({ courses, title, tabData, onNavigate, isRecomme
               spaceBetween: 16
             },
             1200: {
-              slidesPerView: isRecommended ? 4 : 4,
+              slidesPerView: 4,
               spaceBetween: 16
             }
           }}
@@ -222,19 +203,15 @@ const HorizontalCourseSlider = ({ courses, title, tabData, onNavigate, isRecomme
             </div>
           ) : (
             filteredCourses.map((item, index) => (
-              <SwiperSlide key={isRecommended ? item._id : item._id} className="course-slide">
+              <SwiperSlide key={item._id} className="course-slide">
                 <CourseCard
-                  enrollment={isRecommended ? null : item}
-                  course={isRecommended ? item : null}
+                  enrollment={item}
                   onNavigate={onNavigate}
-                  isRecommended={isRecommended}
                 />
               </SwiperSlide>
             ))
           )}
         </Swiper>
-        
-        {/* Fade effect for recommended courses */}
         {filteredCourses.length > 4 && (
           <div className="fade-overlay-right"></div>
         )}
@@ -248,7 +225,6 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [enrollments, setEnrollments] = useState([]);
-  const [recommendedCourses, setRecommendedCourses] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -259,10 +235,6 @@ const Home = () => {
         // Fetch enrollments
         const enrollmentsResponse = await axios.get('/api/users/enrollments');
         setEnrollments(enrollmentsResponse.data?.filter(e => e?.course) || []);
-        
-        // Fetch recommended courses (all published courses)
-        const coursesResponse = await axios.get('/api/courses');
-        setRecommendedCourses(coursesResponse.data || []);
       } catch (err) {
         setError('Failed to load data. Please try again later.');
         console.error('Error:', err);
@@ -283,13 +255,6 @@ const Home = () => {
     submittedAssignments: enrollments.reduce((acc, curr) => 
       acc + (curr.unitsProgress?.filter(u => u?.assignment?.status === 'submitted')?.length || 0), 0)
   }), [enrollments]);
-
-
-  const filteredRecommendedCourses = useMemo(() => {
-  // Return all courses without filtering out enrolled ones
-  return recommendedCourses;
-}, [recommendedCourses]);
-
 
   const handleNavigate = (courseId) => {
     navigate(`/courses/${courseId}`);
@@ -366,21 +331,12 @@ const Home = () => {
                 title="My Learning"
                 tabData={stats}
                 onNavigate={handleNavigate}
-                isRecommended={false}
-              />
-
-              {/* Recommended Courses Section */}
-              <HorizontalCourseSlider
-                courses={filteredRecommendedCourses}
-                title="Recommended Courses"
-                onNavigate={handleNavigate}
-                isRecommended={true}
               />
             </>
-          )}
+            )}
         </div>
       </Container>
-    </div>
+    </div>  
   );
 };
 

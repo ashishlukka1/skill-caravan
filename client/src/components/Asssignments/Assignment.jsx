@@ -67,27 +67,42 @@ const AssignmentQuiz = () => {
         ]);
         
         const unit = courseRes.data.units[parseInt(unitIndex)];
-        if (!unit?.assignment?.assignmentSets) {
+        // Fix: Defensive checks for assignment structure
+        if (
+          !unit ||
+          !unit.assignment ||
+          !Array.isArray(unit.assignment.assignmentSets) ||
+          unit.assignment.assignmentSets.length === 0
+        ) {
           throw new Error("No assignment found for this unit");
         }
 
         setCourse(courseRes.data);
         setProgress(progressRes.data);
-        
+
         const unitProg = progressRes.data.unitsProgress[parseInt(unitIndex)];
-        const assignedSetNumber = unitProg?.assignment?.assignedSetNumber;
-        
+        let assignedSetNumber = unitProg?.assignment?.assignedSetNumber;
+
+        // If not assigned yet, assign the first set by default
+        if (!assignedSetNumber && unit.assignment.assignmentSets.length === 1) {
+          assignedSetNumber = unit.assignment.assignmentSets[0].setNumber;
+        }
+        if (!assignedSetNumber && unit.assignment.assignmentSets.length > 1) {
+          assignedSetNumber = unit.assignment.assignmentSets[0].setNumber;
+        }
+
         // Find the assigned set
         const currentSet = unit.assignment.assignmentSets.find(
           set => set.setNumber === assignedSetNumber
-        );
+        ) || unit.assignment.assignmentSets[0];
+
         setAssignmentSet(currentSet);
 
         // Shuffle questions and initialize answers
         if (currentSet) {
           initializeAssignment(currentSet, unitProg?.assignment?.submission);
         }
-        
+
         setSubmitted(unitProg?.assignment?.status === "submitted");
         setScore(unitProg?.assignment?.score || 0);
 
