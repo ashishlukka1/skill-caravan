@@ -4,7 +4,7 @@ import { FaLock, FaCheckCircle, FaChevronRight, FaPlay, FaFile } from "react-ico
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "../../utils/axios";
 import { AuthContext } from "../../context/AuthContext";
-import "./CourseDetail.css";
+import "./CourseDetail.css";  
 
 const ResourceModal = ({ resource, show, onHide, onComplete }) => {
   if (!resource) return null;
@@ -366,7 +366,7 @@ const getAssignmentButtonText = (unitIdx, unitProgress, unit) => {
 
   if (loading) {
     return (
-      <div className="text-center m-5 py-5">
+      <div className="text-center m-5 py-5 min-vh-100 ">
         <Spinner animation="border" variant="primary" className="m-5"/>
       </div>
     );
@@ -403,7 +403,7 @@ const getAssignmentButtonText = (unitIdx, unitProgress, unit) => {
   };
 
   return (
-    <div className="course-detail-page">
+    <div className="course-detail-page min-vh-100">
       <div className="course-header">
         <Container>
           <Row className="align-items-center">
