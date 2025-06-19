@@ -74,7 +74,7 @@ function MyCertificates() {
 
   if (loading) {
     return (
-      <div className="text-center py-5">
+      <div className="text-center mt-5 py-5 min-vh-100">
         <Spinner animation="border" role="status" />
       </div>
     );
