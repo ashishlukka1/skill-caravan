@@ -269,7 +269,7 @@ const Home = () => {
   }
 
   return (
-    <div className="home-container">
+    <div className="home-container min-vh-100">
       {/* Full-width Banner Section */}
       <div className="banner-section">
         <Swiper

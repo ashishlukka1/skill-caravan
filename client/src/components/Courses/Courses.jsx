@@ -495,7 +495,7 @@ const handleEnroll = async (courseId) => {
   };
 
   return (
-    <div className="courses-page">
+    <div className="courses-page min-vh-100">
       <Container fluid className="courses-container">
         <Row>
           {loading ? (

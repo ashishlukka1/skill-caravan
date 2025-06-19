@@ -183,10 +183,10 @@ const AddCertificate = () => {
   };
 
   return (
-    <div className="container py-4">
-      <Card>
+    <div className="container py-4 min-vh-100 mt-5">
+      <Card className="mt-3 p-3">
         <Card.Body>
-          <h4>Certificate Preview</h4>
+          {/* <h4>Certificate Preview</h4> */}
           <div className="d-flex flex-wrap">
             <div style={{ flex: 2, minWidth: 350 }}>
               <div

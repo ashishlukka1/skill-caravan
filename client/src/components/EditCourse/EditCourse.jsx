@@ -34,10 +34,9 @@ const EditCourses = () => {
   );
 
   return (
-    <Container className="py-4 edit-courses min-vh-100">
-      <h2 className="mb-4">Edit Courses</h2>
+    <Container className="py-4 edit-courses min-vh-100 mt-5">
 
-      <Form.Group className="mb-3">
+      <Form.Group className="mb-3 mt-3">
         <Form.Control
           type="text"
           placeholder="Search courses..."
