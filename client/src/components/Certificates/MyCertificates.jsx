@@ -48,7 +48,7 @@ function MyCertificates() {
   }
 
   return (
-    <Container className="py-4">
+    <Container className="py-4 min-vh-100">
       <h2 className="mb-4 text-center">My Certificates</h2>
       {certificates.length === 0 ? (
         <Alert variant="info" className="text-center">
