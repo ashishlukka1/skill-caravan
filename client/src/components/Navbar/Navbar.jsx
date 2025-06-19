@@ -123,6 +123,7 @@ const Navbar = () => {
           <>
             <Link to="/add-course" className="ms-3">Add Course</Link>
             <Link to="/edit-courses" className="ms-3">Edit Courses</Link>
+            <Link to="/universal-certificate" className="ms-3">Edit Default Certificate</Link>
           </>
         )}
       </div>

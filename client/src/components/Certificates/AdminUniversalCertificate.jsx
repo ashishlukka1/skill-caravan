@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
 import axios from "../../utils/axios";
-import { useParams, useNavigate } from "react-router-dom";
 import { Button, Form, Card, Alert } from "react-bootstrap";
 
 const defaultFont = {
@@ -16,9 +15,7 @@ const defaultCoursePosition = { x: 100, y: 200 };
 const defaultDatePosition = { x: 100, y: 300 };
 const defaultQrPosition = { x: 400, y: 350 };
 
-const AddCertificate = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
+const AdminUniversalCertificate = () => {
   const [template, setTemplate] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [namePosition, setNamePosition] = useState(defaultNamePosition);
@@ -29,34 +26,38 @@ const AddCertificate = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [zoom, setZoom] = useState(1);
+
+  // For keeping the existing template if not uploading a new one
+  const [existingTemplateUrl, setExistingTemplateUrl] = useState("");
 
   const imgRef = useRef();
 
-  // Fetch existing certificate data if present
+  // Fetch existing universal certificate if present
   useEffect(() => {
-    const fetchCertificate = async () => {
+    const fetchUniversal = async () => {
       try {
-        const res = await axios.get(`/api/courses/${id}`);
-        const cert = res.data.certificate;
-        if (cert && cert.templateUrl) {
-          setPreviewUrl(cert.templateUrl);
-          if (cert.textSettings?.namePosition)
-            setNamePosition(cert.textSettings.namePosition);
-          if (cert.textSettings?.coursePosition)
-            setCoursePosition(cert.textSettings.coursePosition);
-          if (cert.textSettings?.datePosition)
-            setDatePosition(cert.textSettings.datePosition);
-          if (cert.textSettings?.qrPosition)
-            setQrPosition(cert.textSettings.qrPosition);
-          if (cert.textSettings?.font)
-            setFont({ ...defaultFont, ...cert.textSettings.font });
+        const res = await axios.get("/api/courses/universal");
+        if (res.data.templateUrl) {
+          setPreviewUrl(res.data.templateUrl);
+          setExistingTemplateUrl(res.data.templateUrl);
         }
+        if (res.data.textSettings?.namePosition)
+          setNamePosition(res.data.textSettings.namePosition);
+        if (res.data.textSettings?.coursePosition)
+          setCoursePosition(res.data.textSettings.coursePosition);
+        if (res.data.textSettings?.datePosition)
+          setDatePosition(res.data.textSettings.datePosition);
+        if (res.data.textSettings?.qrPosition)
+          setQrPosition(res.data.textSettings.qrPosition);
+        if (res.data.textSettings?.font)
+          setFont({ ...defaultFont, ...res.data.textSettings.font });
       } catch (err) {
-        // ignore error
+        // ignore error if not set
       }
     };
-    fetchCertificate();
-  }, [id]);
+    fetchUniversal();
+  }, []);
 
   // Handle template file change and preview
   const handleTemplateChange = (e) => {
@@ -83,7 +84,7 @@ const AddCertificate = () => {
     if (field === "qr") setQrPosition({ x, y });
   };
 
-  // Font family/color/size
+  // Font family/color
   const handleFontChange = (e) => {
     const { name, value } = e.target;
     setFont((prev) => ({
@@ -92,7 +93,7 @@ const AddCertificate = () => {
     }));
   };
 
-  // Submit certificate template and settings
+  // Submit universal certificate template and settings
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -100,20 +101,30 @@ const AddCertificate = () => {
     setSuccess("");
     try {
       const formData = new FormData();
-      if (template) formData.append("template", template);
-      formData.append("namePosition", JSON.stringify(namePosition));
-      formData.append("coursePosition", JSON.stringify(coursePosition));
-      formData.append("datePosition", JSON.stringify(datePosition));
-      formData.append("qrPosition", JSON.stringify(qrPosition));
-      formData.append("font", JSON.stringify(font));
-      await axios.post(`/api/courses/${id}/certificate-template`, formData, {
+      if (template) {
+        formData.append("template", template); // File object
+      }
+      formData.append(
+        "textSettings",
+        JSON.stringify({
+          namePosition,
+          coursePosition,
+          datePosition,
+          qrPosition,
+          font,
+        })
+      );
+      await axios.post("/api/courses/universal", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setSuccess("Certificate template uploaded and configured!");
-      setTimeout(() => navigate(`/edit-courses/${id}`), 1200);
+      setSuccess("Universal certificate template updated!");
+      if (template) {
+        // If new template uploaded, update preview
+        setExistingTemplateUrl(previewUrl);
+      }
     } catch (err) {
       setError(
-        err.response?.data?.message || "Failed to upload certificate template"
+        err.response?.data?.message || "Failed to update universal certificate"
       );
     } finally {
       setLoading(false);
@@ -133,8 +144,8 @@ const AddCertificate = () => {
     if (!imgRef.current) return { display: "none" };
     const naturalWidth = imgRef.current.naturalWidth || 500;
     const naturalHeight = imgRef.current.naturalHeight || 350;
-    const width = 500;
-    const height = 350;
+    const width = 500 * zoom;
+    const height = 350 * zoom;
     return {
       position: "absolute",
       left: pos.x * (width / naturalWidth),
@@ -151,8 +162,8 @@ const AddCertificate = () => {
     if (!imgRef.current) return { display: "none" };
     const naturalWidth = imgRef.current.naturalWidth || 500;
     const naturalHeight = imgRef.current.naturalHeight || 350;
-    const width = 500;
-    const height = 350;
+    const width = 500 * zoom;
+    const height = 350 * zoom;
     const size = font.qrSize * (width / naturalWidth);
     return {
       position: "absolute",
@@ -183,53 +194,58 @@ const AddCertificate = () => {
   };
 
   return (
-    <div className="container py-4">
-      <Card>
+    <div className="container py-4 mt-5">
+      <Card className="mt-3">
         <Card.Body>
-          <h4>Certificate Preview</h4>
+          <h4>Default Certificate Template</h4>
+          <div className="mb-3">
+            <Form.Label>Zoom: {Math.round(zoom * 100)}%</Form.Label>
+            <Form.Range
+              min={0.5}
+              max={2}
+              step={0.05}
+              value={zoom}
+              onChange={e => setZoom(Number(e.target.value))}
+              style={{ width: 200 }}
+            />
+          </div>
           <div className="d-flex flex-wrap">
             <div style={{ flex: 2, minWidth: 350 }}>
-              <div
-                style={{
-                  position: "relative",
-                  width: 500,
-                  height: 350,
-                  margin: "auto",
-                  border: "1px solid #ddd",
-                  background: "#fafafa",
-                }}
-              >
-                {previewUrl && (
-                  <img
-                    src={previewUrl}
-                    alt="Certificate Template"
-                    ref={imgRef}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "contain",
-                      cursor: "pointer",
-                    }}
-                  />
-                )}
-                {previewUrl && (
-                  <>
-                    <div style={getOverlayStyle(namePosition, "nameSize")}>
-                      John Doe
-                    </div>
-                    <div style={getOverlayStyle(coursePosition, "courseSize")}>
-                      Course Name
-                    </div>
-                    <div style={getOverlayStyle(datePosition, "dateSize")}>
-                      01/01/2025
-                    </div>
-                    <div style={getQrStyle(qrPosition)}>QR</div>
-                  </>
-                )}
+              <div style={{
+                position: "relative",
+                width: 500 * zoom,
+                height: 350 * zoom,
+                margin: "auto",
+                border: "1px solid #ddd",
+                background: "#fafafa"
+              }}>
+                {(previewUrl || existingTemplateUrl) && (
+  <img
+    src={previewUrl || existingTemplateUrl}
+    alt="Certificate Template"
+    ref={imgRef}
+    style={{
+      width: "100%",
+      height: "100%",
+      objectFit: "contain",
+      cursor: "pointer"
+    }}
+  />
+)}
+                {/* Overlay sample text for each field */}
+                {(previewUrl || existingTemplateUrl) && (
+  <>
+    <div style={getOverlayStyle(namePosition, "nameSize")}>John Doe</div>
+    <div style={getOverlayStyle(coursePosition, "courseSize")}>Course Name</div>
+    <div style={getOverlayStyle(datePosition, "dateSize")}>01/01/2025</div>
+    <div style={getQrStyle(qrPosition)}>QR</div>
+  </>
+)}
               </div>
               <div className="text-center mt-2">
                 <small>
-                  Use "Set Position" then click on the image to set each field's position.
+                  Use "Set Position" then click on the image to set each field's position.<br />
+                  Use the zoom slider for precise placement.
                 </small>
               </div>
             </div>
@@ -238,11 +254,7 @@ const AddCertificate = () => {
               <Form onSubmit={handleSubmit}>
                 <Form.Group className="mb-2">
                   <Form.Label>Font Family</Form.Label>
-                  <Form.Select
-                    name="family"
-                    value={font.family}
-                    onChange={handleFontChange}
-                  >
+                  <Form.Select name="family" value={font.family} onChange={handleFontChange}>
                     <option>Arial</option>
                     <option>Times New Roman</option>
                     <option>Verdana</option>
@@ -312,18 +324,14 @@ const AddCertificate = () => {
                       type="number"
                       name="x"
                       value={namePosition.x}
-                      onChange={e =>
-                        setNamePosition({ ...namePosition, x: Number(e.target.value) })
-                      }
+                      onChange={e => setNamePosition({ ...namePosition, x: Number(e.target.value) })}
                       placeholder="X"
                     />
                     <Form.Control
                       type="number"
                       name="y"
                       value={namePosition.y}
-                      onChange={e =>
-                        setNamePosition({ ...namePosition, y: Number(e.target.value) })
-                      }
+                      onChange={e => setNamePosition({ ...namePosition, y: Number(e.target.value) })}
                       placeholder="Y"
                     />
                     <Button
@@ -343,18 +351,14 @@ const AddCertificate = () => {
                       type="number"
                       name="x"
                       value={coursePosition.x}
-                      onChange={e =>
-                        setCoursePosition({ ...coursePosition, x: Number(e.target.value) })
-                      }
+                      onChange={e => setCoursePosition({ ...coursePosition, x: Number(e.target.value) })}
                       placeholder="X"
                     />
                     <Form.Control
                       type="number"
                       name="y"
                       value={coursePosition.y}
-                      onChange={e =>
-                        setCoursePosition({ ...coursePosition, y: Number(e.target.value) })
-                      }
+                      onChange={e => setCoursePosition({ ...coursePosition, y: Number(e.target.value) })}
                       placeholder="Y"
                     />
                     <Button
@@ -374,18 +378,14 @@ const AddCertificate = () => {
                       type="number"
                       name="x"
                       value={datePosition.x}
-                      onChange={e =>
-                        setDatePosition({ ...datePosition, x: Number(e.target.value) })
-                      }
+                      onChange={e => setDatePosition({ ...datePosition, x: Number(e.target.value) })}
                       placeholder="X"
                     />
                     <Form.Control
                       type="number"
                       name="y"
                       value={datePosition.y}
-                      onChange={e =>
-                        setDatePosition({ ...datePosition, y: Number(e.target.value) })
-                      }
+                      onChange={e => setDatePosition({ ...datePosition, y: Number(e.target.value) })}
                       placeholder="Y"
                     />
                     <Button
@@ -405,18 +405,14 @@ const AddCertificate = () => {
                       type="number"
                       name="x"
                       value={qrPosition.x}
-                      onChange={e =>
-                        setQrPosition({ ...qrPosition, x: Number(e.target.value) })
-                      }
+                      onChange={e => setQrPosition({ ...qrPosition, x: Number(e.target.value) })}
                       placeholder="X"
                     />
                     <Form.Control
                       type="number"
                       name="y"
                       value={qrPosition.y}
-                      onChange={e =>
-                        setQrPosition({ ...qrPosition, y: Number(e.target.value) })
-                      }
+                      onChange={e => setQrPosition({ ...qrPosition, y: Number(e.target.value) })}
                       placeholder="Y"
                     />
                     <Button
@@ -440,23 +436,15 @@ const AddCertificate = () => {
                 <Form.Group className="mb-2">
                   <Form.Label>Certificate Template (Image/PDF)</Form.Label>
                   <Form.Control
-                    type="file"
-                    accept="image/*,application/pdf"
-                    onChange={handleTemplateChange}
-                    required={!previewUrl}
-                  />
+  type="file"
+  accept="image/*,application/pdf"
+  onChange={handleTemplateChange}
+/>
                 </Form.Group>
                 {error && <Alert variant="danger">{error}</Alert>}
                 {success && <Alert variant="success">{success}</Alert>}
                 <Button type="submit" variant="primary" disabled={loading}>
                   {loading ? "Uploading..." : "Upload & Save"}
-                </Button>
-                <Button
-                  variant="secondary"
-                  className="ms-2"
-                  onClick={() => navigate(`/edit-courses/${id}`)}
-                >
-                  Back
                 </Button>
               </Form>
             </div>
@@ -467,4 +455,4 @@ const AddCertificate = () => {
   );
 };
 
-export default AddCertificate;
+export default AdminUniversalCertificate;

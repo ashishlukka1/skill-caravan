@@ -448,7 +448,7 @@ const AddCourse = () => {
               </Card.Body>
             </Card>
 
-            {/* Units and Lessons */}
+            {/*    and Lessons */}
             <h4 className="mb-3">Units</h4>
             <Accordion defaultActiveKey={course.units.length ? "0" : undefined}>
               {course.units.map((unit, unitIndex) => (
@@ -842,7 +842,7 @@ const AddCourse = () => {
                 )}
               </Button>
             </div>
-          </Form>
+          </Form> 
         </Col>
       </Row>
     </Container>

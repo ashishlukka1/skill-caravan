@@ -443,62 +443,60 @@ const AssignmentQuiz = () => {
         </div>
 
         <div className="questions-review">
-          {shuffledQuestions.map((question, idx) => {
-            // Map shuffled index back to original index for correct answer
-            const originalIdx = questionOrder[idx];
-            const userAnswer = answers[idx];
-            const isCorrect = userAnswer === parseInt(assignmentSet.questions[originalIdx].correctAnswer);
+          {assignmentSet.questions.map((question, originalIdx) => {
+  // Find the shuffled index for this original question
+  const shuffledIdx = questionOrder.indexOf(originalIdx);
+  const userAnswer = answers[shuffledIdx];
+  const isCorrect = userAnswer === parseInt(question.correctAnswer);
 
-            return (
-              <Card key={idx} className={`question-review-card mb-4 ${isCorrect ? 'border-success' : 'border-danger'}`}>
-                <Card.Header className="d-flex justify-content-between align-items-center">
-                  <span>Question {idx + 1}</span>
-                  <Badge bg={isCorrect ? "success" : "danger"}>
-                    {isCorrect ? (
-                      <><FaCheckCircle className="me-1" /> {question.marks} marks</>
-                    ) : (
-                      <><FaTimes className="me-1" /> 0/{question.marks} marks</>
-                    )}
-                  </Badge>
-                </Card.Header>
-                <Card.Body>
-                  <Card.Text className="mb-4">{question.questionText}</Card.Text>
-                  
-                  <div className="options-grid">
-                    {question.options.map((option, optIdx) => (
-                      <div
-                        key={optIdx}
-                        className={`
-                          option-item p-3 rounded
-                          ${optIdx === userAnswer ? 'selected' : ''}
-                          ${optIdx === parseInt(assignmentSet.questions[originalIdx].correctAnswer) ? 'correct' : ''}
-                          ${optIdx === userAnswer && !isCorrect ? 'incorrect' : ''}
-                        `}
-                      >
-                        <div className="d-flex align-items-center">
-                          <div className="option-marker me-3">
-                            {optIdx === parseInt(assignmentSet.questions[originalIdx].correctAnswer) && (
-                              <FaCheckCircle className="text-success" />
-                            )}
-                            {optIdx === userAnswer && !isCorrect && (
-                              <FaTimes className="text-danger" />
-                            )}
-                          </div>
-                          <div className="option-text">{option}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {!isCorrect && (
-                    <Alert variant="info" className="mt-3 mb-0">
-                      The correct answer was: {question.options[parseInt(assignmentSet.questions[originalIdx].correctAnswer)]}
-                    </Alert>
+  return (
+    <Card key={originalIdx} className={`question-review-card mb-4 ${isCorrect ? 'border-success' : 'border-danger'}`}>
+      <Card.Header className="d-flex justify-content-between align-items-center">
+        <span>Question {originalIdx + 1}</span>
+        <Badge bg={isCorrect ? "success" : "danger"}>
+          {isCorrect ? (
+            <><FaCheckCircle className="me-1" /> {question.marks} marks</>
+          ) : (
+            <><FaTimes className="me-1" /> 0/{question.marks} marks</>
+          )}
+        </Badge>
+      </Card.Header>
+      <Card.Body>
+        <Card.Text className="mb-4">{question.questionText}</Card.Text>
+        <div className="options-grid">
+          {question.options.map((option, optIdx) => (
+            <div
+              key={optIdx}
+              className={`
+                option-item p-3 rounded
+                ${optIdx === userAnswer ? 'selected' : ''}
+                ${optIdx === parseInt(question.correctAnswer) ? 'correct' : ''}
+                ${optIdx === userAnswer && !isCorrect ? 'incorrect' : ''}
+              `}
+            >
+              <div className="d-flex align-items-center">
+                <div className="option-marker me-3">
+                  {optIdx === parseInt(question.correctAnswer) && (
+                    <FaCheckCircle className="text-success" />
                   )}
-                </Card.Body>
-              </Card>
-            );
-          })}
+                  {optIdx === userAnswer && !isCorrect && (
+                    <FaTimes className="text-danger" />
+                  )}
+                </div>
+                <div className="option-text">{option}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        {!isCorrect && (
+          <Alert variant="info" className="mt-3 mb-0">
+            The correct answer was: {question.options[parseInt(question.correctAnswer)]}
+          </Alert>
+        )}
+      </Card.Body>
+    </Card>
+  );
+})}
         </div>
 
         <div className="review-actions mt-4 text-center">

@@ -7,6 +7,7 @@ const Course = require("../models/Course");
 const { createCanvas, loadImage } = require("canvas");
 const uploadToCloudinary = require("../utils/uploadToCloudinary");
 const { v4: uuidv4 } = require("uuid");
+const generateCertificateForUser = require("../utils/generateCertificateForUser.js");
 
 // Helper: Generate certificate image with user's name
 async function generateCertificateImage(templateUrl, name, textSettings) {
@@ -69,69 +70,57 @@ async function tryGenerateCertificate(user, course, enrollment) {
   }
 }
 
-router.post("/:courseId/issue-certificate", authMiddleware, async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-    const course = await Course.findById(req.params.courseId);
+router.post(
+  "/:courseId/issue-certificate",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const user = await User.findById(req.user._id);
+      const course = await Course.findById(req.params.courseId);
 
-    if (!user || !course) {
-      return res.status(404).json({ message: "User or course not found" });
+      if (!user || !course) {
+        return res.status(404).json({ message: "User or course not found" });
+      }
+
+      const enrollment = user.enrolledCourses.find(
+        (e) => e.course.toString() === course._id.toString()
+      );
+      if (!enrollment) {
+        return res.status(404).json({ message: "Not enrolled in this course" });
+      }
+
+      if (enrollment.progress !== 100) {
+        return res.status(400).json({ message: "Course not completed" });
+      }
+      if (enrollment.certificate?.issued) {
+        return res.status(400).json({ message: "Certificate already issued" });
+      }
+
+      try {
+        const certObj = await generateCertificateForUser({ user, course });
+        enrollment.certificate = certObj;
+      } catch (err) {
+        console.error("Certificate generation error:", err);
+        return res.status(500).json({ message: "Failed to issue certificate" });
+      }
+
+      user.markModified("enrolledCourses");
+      await user.save();
+
+      res.json({
+        message: "Certificate issued",
+        certificate: enrollment.certificate,
+      });
+    } catch (err) {
+      console.error("Certificate generation error:", err);
+      res.status(500).json({ message: "Failed to issue certificate" });
     }
-
-    // Find enrollment
-    const enrollment = user.enrolledCourses.find(
-      (e) => e.course.toString() === course._id.toString()
-    );
-    if (!enrollment) {
-      return res.status(404).json({ message: "Not enrolled in this course" });
-    }
-
-    // Only issue if progress is 100 and not already issued
-    if (enrollment.progress !== 100) {
-      return res.status(400).json({ message: "Course not completed" });
-    }
-    if (enrollment.certificate?.issued) {
-      return res.status(400).json({ message: "Certificate already issued" });
-    }
-
-    // Generate certificate
-    const certId = uuidv4().slice(0, 8).toUpperCase();
-    const buffer = await generateCertificateImage(
-      course.certificate.templateUrl,
-      user.name,
-      course.certificate.textSettings
-    );
-
-    // Upload to Cloudinary
-    const uploadResult = await uploadToCloudinary(
-      buffer,
-      `certificates/${user._id}`,
-      `certificate-${certId}.png`,
-      "image/png"
-    );
-
-    // Update enrollment certificate info
-    enrollment.certificate = {
-      issued: true,
-      issuedAt: new Date(),
-      certificateId: certId,
-      certificateUrl: uploadResult.secure_url,
-      storageUrl: uploadResult.public_id,
-    };
-
-    await user.save();
-
-    res.json({
-      message: "Certificate issued",
-      certificate: enrollment.certificate,
-    });
-  } catch (err) {
-    console.error("Certificate generation error:", err);
-    res.status(500).json({ message: "Failed to issue certificate" });
   }
-});
+);
 
-router.post("/:courseId/unit/:unitIndex/assign-set", 
+
+router.post(
+  "/:courseId/unit/:unitIndex/assign-set",
   authMiddleware,
   async (req, res) => {
     try {
@@ -146,7 +135,7 @@ router.post("/:courseId/unit/:unitIndex/assign-set",
       }
 
       const enrollment = user.enrolledCourses.find(
-        e => e.course.toString() === courseId
+        (e) => e.course.toString() === courseId
       );
 
       if (!enrollment) {
@@ -165,14 +154,16 @@ router.post("/:courseId/unit/:unitIndex/assign-set",
           completed: false,
           lessonsCompleted: [],
           assignment: {},
-          lastAccessed: new Date()
+          lastAccessed: new Date(),
         };
       }
 
       const currentAssignment = enrollment.unitsProgress[unitIndex].assignment;
       let assignedSetNumber = currentAssignment?.assignedSetNumber;
       let assignedSet = assignedSetNumber
-        ? unit.assignment.assignmentSets.find(set => set.setNumber === assignedSetNumber)
+        ? unit.assignment.assignmentSets.find(
+            (set) => set.setNumber === assignedSetNumber
+          )
         : null;
 
       // If assignment is already submitted, check if perfect score
@@ -188,14 +179,18 @@ router.post("/:courseId/unit/:unitIndex/assign-set",
           currentAssignment.score === totalPossibleScore &&
           totalPossibleScore > 0
         ) {
-          return res.status(400).json({ message: "Assignment already completed with perfect score" });
+          return res.status(400).json({
+            message: "Assignment already completed with perfect score",
+          });
         }
       }
 
       // Get available sets excluding the current one if excludeSet is provided
       let availableSets = unit.assignment.assignmentSets;
       if (excludeSet) {
-        availableSets = availableSets.filter(set => set.setNumber !== excludeSet);
+        availableSets = availableSets.filter(
+          (set) => set.setNumber !== excludeSet
+        );
       }
 
       if (availableSets.length === 0) {
@@ -205,10 +200,13 @@ router.post("/:courseId/unit/:unitIndex/assign-set",
       // Pick setNumber if provided, else random
       let newAssignedSet;
       if (setNumber) {
-        newAssignedSet = availableSets.find(set => set.setNumber === setNumber);
+        newAssignedSet = availableSets.find(
+          (set) => set.setNumber === setNumber
+        );
       }
       if (!newAssignedSet) {
-        newAssignedSet = availableSets[Math.floor(Math.random() * availableSets.length)];
+        newAssignedSet =
+          availableSets[Math.floor(Math.random() * availableSets.length)];
       }
       const newAssignedSetNumber = newAssignedSet.setNumber;
 
@@ -223,19 +221,19 @@ router.post("/:courseId/unit/:unitIndex/assign-set",
           questionIndex: idx,
           answered: false,
           selectedOption: null,
-          correct: false
+          correct: false,
         })),
-        lastAccessed: new Date()
+        lastAccessed: new Date(),
       };
 
       await user.save();
       res.json(enrollment);
-
     } catch (err) {
       console.error("Error assigning set:", err);
       res.status(500).json({ message: "Error assigning assignment set" });
     }
-});
+  }
+);
 
 // Get course progress (this should be AFTER more specific routes)
 router.get("/:courseId", authMiddleware, async (req, res) => {
@@ -248,7 +246,7 @@ router.get("/:courseId", authMiddleware, async (req, res) => {
 
     const user = await User.findById(req.user._id);
     const enrollment = user.enrolledCourses.find(
-      e => e.course.toString() === courseId
+      (e) => e.course.toString() === courseId
     );
 
     if (!enrollment) {
@@ -265,15 +263,15 @@ router.get("/:courseId", authMiddleware, async (req, res) => {
           lessonIndex,
           completed: false,
           resourcesProgress: [],
-          lastAccessed: new Date()
+          lastAccessed: new Date(),
         })),
         assignment: {
           assignedSetNumber: null,
           status: "not_started",
           submission: [],
           score: 0,
-          questionsProgress: []
-        }
+          questionsProgress: [],
+        },
       }));
       await user.save();
     }
@@ -286,94 +284,95 @@ router.get("/:courseId", authMiddleware, async (req, res) => {
 });
 
 // Add this route BEFORE the other routes
-router.post("/:courseId/unit/:unitIndex/lesson/:lessonIndex", 
+router.post(
+  "/:courseId/unit/:unitIndex/lesson/:lessonIndex",
   authMiddleware,
   async (req, res) => {
     try {
       const { courseId, unitIndex, lessonIndex } = req.params;
-      const { completed, resourceId, resourceProgress } = req.body;
-
       const user = await User.findById(req.user._id);
-      const enrollment = user.enrolledCourses.find(
-        e => e.course.toString() === courseId
-      );
+      const course = await Course.findById(courseId);
 
+      if (!user || !course) {
+        return res.status(404).json({ message: "User or course not found" });
+      }
+
+      const enrollment = user.enrolledCourses.find(
+        (e) => e.course.toString() === courseId
+      );
       if (!enrollment) {
         return res.status(404).json({ message: "Not enrolled in this course" });
       }
 
-      // Initialize unit progress if needed
+      // Ensure unitsProgress and lessonsCompleted arrays are correct length
+      const courseUnit = course.units[unitIndex];
       if (!enrollment.unitsProgress[unitIndex]) {
         enrollment.unitsProgress[unitIndex] = {
           unitIndex: parseInt(unitIndex),
           completed: false,
           lessonsCompleted: [],
           assignment: null,
-          lastAccessed: new Date()
+          lastAccessed: new Date(),
         };
       }
-
-      // Initialize lesson progress if needed
-      if (!enrollment.unitsProgress[unitIndex].lessonsCompleted[lessonIndex]) {
-        enrollment.unitsProgress[unitIndex].lessonsCompleted[lessonIndex] = {
-          lessonIndex: parseInt(lessonIndex),
+      const unit = enrollment.unitsProgress[unitIndex];
+      if (!unit.lessonsCompleted) unit.lessonsCompleted = [];
+      for (let i = unit.lessonsCompleted.length; i < courseUnit.lessons.length; i++) {
+        unit.lessonsCompleted[i] = {
+          lessonIndex: i,
           completed: false,
           resourcesProgress: [],
-          lastAccessed: new Date()
+          lastAccessed: new Date(),
         };
       }
 
-      const lesson = enrollment.unitsProgress[unitIndex].lessonsCompleted[lessonIndex];
-
-      // Update lesson completion status
-      if (completed !== undefined) {
-        lesson.completed = completed;
-      }
-      
-      lesson.lastAccessed = new Date();
-
-      // Update resource progress if provided
-      if (resourceId && resourceProgress) {
-        const resourceProgressIndex = lesson.resourcesProgress.findIndex(
-          rp => rp.resourceId === resourceId
-        );
-
-        if (resourceProgressIndex > -1) {
-          lesson.resourcesProgress[resourceProgressIndex] = {
-            ...lesson.resourcesProgress[resourceProgressIndex],
-            ...resourceProgress,
-            lastAccessed: new Date()
-          };
-        } else {
-          lesson.resourcesProgress.push({
-            resourceId,
-            ...resourceProgress,
-            lastAccessed: new Date()
-          });
-        }
-      }
+      // Mark lesson as completed
+      unit.lessonsCompleted[lessonIndex].completed = true;
+      unit.lessonsCompleted[lessonIndex].lastAccessed = new Date();
 
       // Check if all lessons in the unit are completed
-      const unit = enrollment.unitsProgress[unitIndex];
-      const allLessonsCompleted = unit.lessonsCompleted.every(l => l.completed);
+      const allLessonsCompleted =
+        unit.lessonsCompleted.length === courseUnit.lessons.length &&
+        unit.lessonsCompleted.every((l) => l.completed);
 
       // If all lessons are completed and there's no assignment or assignment is completed
-      if (allLessonsCompleted && (!unit.assignment || unit.assignment.status === 'submitted')) {
+      if (
+        allLessonsCompleted &&
+        (!unit.assignment || unit.assignment.status === "submitted")
+      ) {
         unit.completed = true;
       }
 
       // Update overall course progress
       enrollment.progress = Math.round(
-        (enrollment.unitsProgress.filter(u => u.completed).length / 
-         enrollment.unitsProgress.length) * 100
+        (enrollment.unitsProgress.filter((u) => u.completed).length /
+          enrollment.unitsProgress.length) *
+          100
       );
 
+      // If course is completed, update status and generate certificate
+      if (enrollment.progress === 100) {
+        enrollment.status = "completed";
+        if (!enrollment.certificate || !enrollment.certificate.issued) {
+          try {
+            const certObj = await generateCertificateForUser({ user, course });
+            enrollment.certificate = certObj;
+          } catch (err) {
+            console.error("Certificate generation error:", err);
+          }
+        }
+      }
+
+      user.markModified("enrolledCourses");
       await user.save();
+
+      // Return the full updated enrollment object for frontend state
       res.json(enrollment);
     } catch (err) {
-      console.error("Error updating lesson progress:", err);
-      res.status(500).json({ message: "Error updating lesson progress" });
+      console.error("Progress update error:", err);
+      res.status(500).json({ message: "Failed to update progress" });
     }
-});
+  }
+);
 
 module.exports = router;

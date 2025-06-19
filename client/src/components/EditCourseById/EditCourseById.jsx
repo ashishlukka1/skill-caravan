@@ -26,36 +26,36 @@ const ResourceForm = ({ unitIndex, lessonIndex, onSubmit, onCancel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleResourceSubmit = async () => {
-    if (
-      !title ||
-      (type === "video_url" && !url) ||
-      (type !== "video_url" && !file)
-    ) {
-      alert("Please fill all required fields.");
-      return;
+  if (
+    !title ||
+    (type === "video_url" && !url) ||
+    (type !== "video_url" && !file)
+  ) {
+    alert("Please fill all required fields.");
+    return;
+  }
+  setIsSubmitting(true);
+  try {
+    const formData = new FormData();
+    formData.append("type", type);
+    formData.append("title", title);
+    if (type === "video_url") {
+      formData.append("url", url);
+    } else {
+      formData.append("file", file); // <-- This is correct
     }
-    setIsSubmitting(true);
-    try {
-      const formData = new FormData();
-      formData.append("type", type);
-      formData.append("title", title);
-      if (type === "video_url") {
-        formData.append("url", url);
-      } else {
-        formData.append("file", file);
-      }
-      await onSubmit(unitIndex, lessonIndex, formData);
-      setTitle("");
-      setUrl("");
-      setFile(null);
-      setType("video_url");
-      onCancel();
-    } catch (err) {
-      alert("Failed to upload resource");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    await onSubmit(unitIndex, lessonIndex, formData);
+    setTitle("");
+    setUrl("");
+    setFile(null);
+    setType("video_url");
+    onCancel();
+  } catch (err) {
+    alert("Failed to upload resource");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   return (
     <div className="resource-form p-3 border rounded bg-light mb-3">

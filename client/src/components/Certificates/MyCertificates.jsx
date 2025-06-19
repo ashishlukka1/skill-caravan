@@ -1,11 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "../../utils/axios";
 import { Card, Spinner, Alert, Container, Row, Col, Button } from "react-bootstrap";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 function MyCertificates() {
   const [certificates, setCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const imgRefs = useRef({});
 
   useEffect(() => {
     const fetchCertificates = async () => {
@@ -13,7 +16,6 @@ function MyCertificates() {
         setLoading(true);
         setError("");
         const res = await axios.get("/api/courses/my-courses/my-certificates");
-        // Add better error handling for response data
         if (res.data && Array.isArray(res.data.certificates)) {
           setCertificates(res.data.certificates);
         } else {
@@ -30,6 +32,45 @@ function MyCertificates() {
     };
     fetchCertificates();
   }, []);
+
+  const handleDownloadPDF = async (cert, idx) => {
+    const img = imgRefs.current[cert.certificateId || idx];
+    if (!img) return;
+
+    // Wait for image to load
+    if (!img.complete) {
+      await new Promise(resolve => {
+        img.onload = resolve;
+        img.onerror = resolve;
+      });
+    }
+
+    // Create a canvas from the image
+    const canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF({
+      orientation: "landscape",
+      unit: "px",
+      format: [canvas.width, canvas.height],
+    });
+    pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
+
+    // Optionally add course title and certificate ID
+    pdf.setFontSize(18);
+    pdf.setTextColor(40, 40, 40);
+    pdf.text(cert.courseTitle || "", 30, 40);
+    pdf.setFontSize(14);
+    pdf.text(`Certificate ID: ${cert.certificateId || ""}`, 30, 60);
+
+    pdf.save(
+      `${cert.courseTitle || "certificate"}-${cert.certificateId || ""}.pdf`
+    );
+  };
 
   if (loading) {
     return (
@@ -48,7 +89,7 @@ function MyCertificates() {
   }
 
   return (
-    <Container className="py-4">
+    <Container className="py-4 min-vh-100">
       <h2 className="mb-4 text-center">My Certificates</h2>
       {certificates.length === 0 ? (
         <Alert variant="info" className="text-center">
@@ -58,41 +99,71 @@ function MyCertificates() {
         <Row className="g-4">
           {certificates.map((cert, idx) => (
             <Col md={6} lg={4} key={cert.certificateId || idx}>
-              <Card className="h-100 shadow-sm">
-                <Card.Img
-                  variant="top"
-                  src={cert.certificateUrl}
-                  alt={`Certificate for ${cert.courseTitle}`}
+              <Card className="h-100 shadow-sm d-flex flex-column align-items-stretch" style={{ minHeight: 420 }}>
+                <div
                   style={{
-                    objectFit: "contain",
-                    maxHeight: 220,
                     background: "#f8f9fa",
+                    padding: 10,
+                    borderRadius: 8,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    minHeight: 280,
+                    justifyContent: "center"
                   }}
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                  }}
-                />
-                <Card.Body>
-                  <Card.Title className="mb-2">{cert.courseTitle || "Unknown Course"}</Card.Title>
-                  <Card.Text>
-                    <strong>Certificate ID:</strong> {cert.certificateId || "N/A"}
-                    <br />
-                    <strong>Issued At:</strong>{" "}
-                    {cert.issuedAt
-                      ? new Date(cert.issuedAt).toLocaleDateString()
-                      : "N/A"}
-                  </Card.Text>
-                  {cert.certificateUrl && (
-                    <Button
-                      variant="outline-primary"
-                      href={cert.certificateUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-100"
-                    >
-                      View / Download
-                    </Button>
-                  )}
+                >
+                 
+                  <img
+                    ref={el => (imgRefs.current[cert.certificateId || idx] = el)}
+                    src={cert.certificateUrl}
+                    alt={`Certificate for ${cert.courseTitle}`}
+                    style={{
+                      objectFit: "contain",
+                      maxHeight: 220,
+                      width: "100%",
+                      borderRadius: 8,
+                      display: "block"
+                    }}
+                    crossOrigin="anonymous"
+                    onError={e => {
+                      e.target.style.display = "none";
+                    }}
+                  />
+                  <div style={{ padding: 8, width: "100%" }}>
+                    <div>
+                      <strong>Course:</strong> {cert.courseTitle || "Unknown Course"}
+                    </div>
+            
+                    <div>
+                      <strong>Issued At:</strong>{" "}
+                      {cert.issuedAt
+                        ? new Date(cert.issuedAt).toLocaleDateString()
+                        : "N/A"}
+                    </div>
+                  </div>
+                </div>
+                <Card.Body className="d-flex flex-column justify-content-end">
+                  <div className="d-grid gap-2">
+                    {cert.certificateUrl && (
+                      <>
+                        <Button
+                          variant="outline-primary"
+                          href={cert.certificateUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          View
+                        </Button>
+                        
+                        <Button
+                          variant="outline-secondary"
+                          onClick={() => handleDownloadPDF(cert, idx)}
+                        >
+                          Download PDF
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </Card.Body>
               </Card>
             </Col>

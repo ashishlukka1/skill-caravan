@@ -26,6 +26,7 @@ import EditCourseById from "./components/EditCourseById/EditCourseById";
 import MyCertificates from "./components/Certificates/MyCertificates";
 import CertificateUploadPage from "./components/Certificates/AddCertificate";
 import "./App.css";
+import AdminUniversalCertificate from "./components/Certificates/AdminUniversalCertificate";
 
 const AppLayout = () => {
   const location = useLocation();
@@ -131,6 +132,16 @@ const AppLayout = () => {
               <ProtectedRoute>
                 <AdminRoute>
                   <CertificateUploadPage />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/universal-certificate"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <AdminUniversalCertificate />
                 </AdminRoute>
               </ProtectedRoute>
             }
