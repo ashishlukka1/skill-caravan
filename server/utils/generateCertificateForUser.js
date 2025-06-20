@@ -73,7 +73,7 @@ async function generateCertificateForUser({ user, course }) {
 
   // Draw QR code (validate URL)
   if (textSettings.qrPosition) {
-    const qrUrl = `${process.env.PUBLIC_URL || "https://localhost:5173.com"}/api/courses/validate-certificate/${certId}`;
+    const qrUrl = `${process.env.PUBLIC_URL || "https://localhost:5173.com"}/validate-certificate/${certId}`;
     const qrSize = font.qrSize || 80;
     const qrBuffer = await QRCode.toBuffer(qrUrl, { width: qrSize, margin: 0 });
     const qrImage = await loadImage(qrBuffer);
