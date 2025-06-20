@@ -133,7 +133,7 @@ function MyCertificates() {
                     <div>
                       <strong>Course:</strong> {cert.courseTitle || "Unknown Course"}
                     </div>
-            
+                    <strong>Certificate ID:</strong> {cert.certificateId || "N/A"}
                     <div>
                       <strong>Issued At:</strong>{" "}
                       {cert.issuedAt

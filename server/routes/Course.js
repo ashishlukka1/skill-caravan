@@ -870,7 +870,7 @@ router.post("/universal", upload.single("template"), async (req, res) => {
 router.get("/validate-certificate/:certId", async (req, res) => {
   const users = await User.find({
     "enrolledCourses.certificate.certificateId": req.params.certId,
-  });
+  }).populate("enrolledCourses.course", "title");
   if (!users.length)
     return res.status(404).send("Certificate not found or not valid.");
   const user = users[0];
@@ -879,8 +879,10 @@ router.get("/validate-certificate/:certId", async (req, res) => {
   );
   res.json({
     valid: true,
-    user: user.name,
-    course: enrollment?.course,
+    userName: user.name,
+    courseTitle: enrollment?.course?.title || "Course",
+    certificateUrl: enrollment?.certificate?.certificateUrl,
+    certificateId: enrollment?.certificate?.certificateId,
     issuedAt: enrollment?.certificate?.issuedAt,
   });
 });

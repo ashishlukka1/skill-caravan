@@ -27,6 +27,7 @@ import MyCertificates from "./components/Certificates/MyCertificates";
 import CertificateUploadPage from "./components/Certificates/AddCertificate";
 import "./App.css";
 import AdminUniversalCertificate from "./components/Certificates/AdminUniversalCertificate";
+import ValidateCertificate from "./components/Certificates/ValidateCertificate";
 
 const AppLayout = () => {
   const location = useLocation();
@@ -45,6 +46,7 @@ const AppLayout = () => {
               </ProtectedRoute>
             }
           />
+          <Route path="/validate-certificate/:certId" element={<ValidateCertificate />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<UserRegistrationForm />} />
           <Route
