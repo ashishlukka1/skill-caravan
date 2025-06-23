@@ -65,9 +65,9 @@ const EditCourses = () => {
                   Title
                 </th>
                 <th style={{ width: "15%" }}>Category</th>
-                <th style={{ width: "10%" }}>
-                  <FaUsers className="me-2" />
-                  Students
+                <th style={{ width: "15%" }}>
+                  {/* <FaUsers className="me-2" /> */}
+                  Employees Enrolled
                 </th>
                 <th style={{ width: "15%" }}>Created</th>
                 {/* <th style={{ width: "15%" }}>Instructor</th> */}

@@ -155,23 +155,6 @@ const AssignmentQuiz = () => {
         // Only update progress if perfect score
         const progressRes = await axios.get(`/api/progress/${id}`);
         setProgress(progressRes.data);
-        
-        setTimeout(() => {
-          alert("Congratulations! You've achieved a perfect score!");
-          navigate(`/courses/${id}`);
-        }, 1500);
-      } else {
-        // Show score and offer another attempt
-        setTimeout(() => {
-          const confirmNextAttempt = window.confirm(
-            `You scored ${response.data.score}/${totalPossibleMarks}. You need a perfect score to proceed. Would you like to try another set or retry?`
-          );
-          if (confirmNextAttempt) {
-            handleNewAttempt();
-          } else {
-            navigate(`/courses/${id}`);
-          }
-        }, 1500);
       }
 
     } catch (err) {
@@ -253,7 +236,7 @@ const AssignmentQuiz = () => {
   const currentQuestion = shuffledQuestions[currentQ];
 
   return (
-    <Container className="py-5">
+    <Container className="py-5 min-vh-100">
       <Card className="assignment-card">
         <Card.Body>
           <div className="assignment-header">
@@ -274,273 +257,281 @@ const AssignmentQuiz = () => {
             </Button>
           </div>
         {!submitted && (
-  <div className="quiz-section mt-4">
-    <div className="progress-header mb-3">
-      <div className="d-flex justify-content-between align-items-center">
-        <span className="text-muted">
-          {answeredQuestions} of {totalQuestions} answered
-        </span>
-      </div>
-      <ProgressBar 
-        now={(answeredQuestions / totalQuestions) * 100}
-        variant="primary"
-        className="mt-2"
-      />
-    </div>
-
-    <Card className="question-card mt-4">
-      <Card.Body>
-        <h5 className="question-text mb-4">
-          {currentQuestion.questionText}
-        </h5>
-        
-        <div className="options-grid">
-          {currentQuestion.options.map((option, idx) => (
-            <Button
-              key={idx}
-              variant={answers[currentQ] === idx ? "primary" : "outline-primary"}
-              className="text-start p-3 mb-2"
-              onClick={() => handleSelect(currentQ, idx)}
-              disabled={submitting}
-            >
-              <div className="d-flex align-items-center">
-                <div className="me-3">{String.fromCharCode(65 + idx)}.</div>
-                <div>{option}</div>
-                {answers[currentQ] === idx && (
-                  <FaCheckCircle className="ms-auto" />
-                )}
-              </div>
-            </Button>
-          ))}
-        </div>
-      </Card.Body>
-    </Card>
-
-    <div className="navigation-footer mt-4 d-flex justify-content-between align-items-center">
-      <Button
-        variant="outline-primary"
-        disabled={currentQ === 0 || submitting}
-        onClick={() => setCurrentQ(prev => prev - 1)}
-      >
-        Previous
-      </Button>
-
-      <div className="question-dots d-flex gap-2">
-        {Array(totalQuestions).fill(0).map((_, idx) => (
-          <button
-            key={idx}
-            className={`
-              question-dot 
-              ${idx === currentQ ? 'active' : ''} 
-              ${answers[idx] !== null ? 'answered' : ''}
-            `}
-            onClick={() => setCurrentQ(idx)}
-            disabled={submitting}
-          >
-            {idx + 1}
-          </button>
-        ))}
-      </div>
-
-      {currentQ === totalQuestions - 1 ? (
-        <Button
-          variant="success"
-          onClick={handleSubmit}
-          disabled={answers.some(a => a === null) || submitting}
-        >
-          {submitting ? (
-            <>
-              <Spinner
-                as="span"
-                animation="border"
-                size="sm"
-                role="status"
-                aria-hidden="true"
-                className="me-2"
-              />
-              Submitting...
-            </>
-          ) : (
-            'Submit'
-          )}
-        </Button>
-      ) : (
-        <Button
-          variant="primary"
-          onClick={() => setCurrentQ(prev => prev + 1)}
-          disabled={submitting}
-        >
-          Next
-        </Button>
-      )}
-    </div>
-  </div>
-)}
-          {submitted && (
-  <div className="score-section">
-    <div className="score-circle">
-      <div>
-        <div className="score-label">Score</div>
-        <div className="score-value">
-          {score}/{assignmentSet.questions.reduce((acc, q) => acc + q.marks, 0)}
-        </div>
-      </div>
-    </div>
-    <h5 className="mt-4 text-center">
-      {score === assignmentSet.questions.reduce((acc, q) => acc + q.marks, 0) 
-        ? "Perfect Score! Assignment Complete!" 
-        : "Assignment Submitted"}
-    </h5>
-    <div className="mt-3 text-center">
-      <Button
-        variant="primary"
-        onClick={() => setShowReview(!showReview)}
-        className="me-2"
-      >
-        {showReview ? 'Hide Review' : 'Show Review'}
-      </Button>
-      {score < assignmentSet.questions.reduce((acc, q) => acc + q.marks, 0) && (
-        <Button
-          variant="success"
-          onClick={handleNewAttempt}
-        >
-          {assignmentSet && course.units[parseInt(unitIndex)].assignment.assignmentSets.length === 1
-            ? "Retry Assignment"
-            : "Try Another Set"}
-        </Button>
-      )}
-    </div>
-    
-    {showReview && (
-      <div className="review-section mt-4">
-        <div className="score-summary mb-4">
-          <Card className="summary-card">
-            <Card.Body>
-              <h6>Assignment Summary</h6>
+          <div className="quiz-section mt-4">
+            <div className="progress-header mb-3">
               <div className="d-flex justify-content-between align-items-center">
-                <span>Total Questions:</span>
-                <span>{assignmentSet.questions.length}</span>
-              </div>
-              <div className="d-flex justify-content-between align-items-center mt-2">
-                <span>Correct Answers:</span>
-                <span className="text-success">
-                  {assignmentSet.questions.filter((q, idx) => 
-                    answers[idx] === parseInt(q.correctAnswer)
-                  ).length}
+                <span className="text-muted">
+                  {answeredQuestions} of {totalQuestions} answered
                 </span>
               </div>
-              <div className="d-flex justify-content-between align-items-center mt-2">
-                <span>Score Achieved:</span>
-                <span className={score === assignmentSet.questions.reduce((acc, q) => acc + q.marks, 0) 
-                  ? "text-success" 
-                  : "text-warning"
-                }>
-                  {((score / assignmentSet.questions.reduce((acc, q) => acc + q.marks, 0)) * 100).toFixed(1)}%
-                </span>
-              </div>
-            </Card.Body>
-          </Card>
-        </div>
+              <ProgressBar 
+                now={(answeredQuestions / totalQuestions) * 100}
+                variant="primary"
+                className="mt-2"
+              />
+            </div>
 
-        <div className="questions-review">
-          {assignmentSet.questions.map((question, originalIdx) => {
-  // Find the shuffled index for this original question
-  const shuffledIdx = questionOrder.indexOf(originalIdx);
-  const userAnswer = answers[shuffledIdx];
-  const isCorrect = userAnswer === parseInt(question.correctAnswer);
-
-  return (
-    <Card key={originalIdx} className={`question-review-card mb-4 ${isCorrect ? 'border-success' : 'border-danger'}`}>
-      <Card.Header className="d-flex justify-content-between align-items-center">
-        <span>Question {originalIdx + 1}</span>
-        <Badge bg={isCorrect ? "success" : "danger"}>
-          {isCorrect ? (
-            <><FaCheckCircle className="me-1" /> {question.marks} marks</>
-          ) : (
-            <><FaTimes className="me-1" /> 0/{question.marks} marks</>
-          )}
-        </Badge>
-      </Card.Header>
-      <Card.Body>
-        <Card.Text className="mb-4">{question.questionText}</Card.Text>
-        <div className="options-grid">
-          {question.options.map((option, optIdx) => (
-            <div
-              key={optIdx}
-              className={`
-                option-item p-3 rounded
-                ${optIdx === userAnswer ? 'selected' : ''}
-                ${optIdx === parseInt(question.correctAnswer) ? 'correct' : ''}
-                ${optIdx === userAnswer && !isCorrect ? 'incorrect' : ''}
-              `}
-            >
-              <div className="d-flex align-items-center">
-                <div className="option-marker me-3">
-                  {optIdx === parseInt(question.correctAnswer) && (
-                    <FaCheckCircle className="text-success" />
-                  )}
-                  {optIdx === userAnswer && !isCorrect && (
-                    <FaTimes className="text-danger" />
-                  )}
+            <Card className="question-card mt-4">
+              <Card.Body>
+                <h5 className="question-text mb-4">
+                  {currentQuestion.questionText}
+                </h5>
+                
+                <div className="options-grid">
+                  {currentQuestion.options.map((option, idx) => (
+                    <Button
+                      key={idx}
+                      variant={answers[currentQ] === idx ? "primary" : "outline-primary"}
+                      className="text-start p-3 mb-2"
+                      onClick={() => handleSelect(currentQ, idx)}
+                      disabled={submitting}
+                    >
+                      <div className="d-flex align-items-center">
+                        <div className="me-3">{String.fromCharCode(65 + idx)}.</div>
+                        <div>{option}</div>
+                        {answers[currentQ] === idx && (
+                          <FaCheckCircle className="ms-auto" />
+                        )}
+                      </div>
+                    </Button>
+                  ))}
                 </div>
-                <div className="option-text">{option}</div>
+              </Card.Body>
+            </Card>
+
+            <div className="navigation-footer mt-4 d-flex justify-content-between align-items-center">
+              <Button
+                variant="outline-primary"
+                disabled={currentQ === 0 || submitting}
+                onClick={() => setCurrentQ(prev => prev - 1)}
+              >
+                Previous
+              </Button>
+
+              <div className="question-dots d-flex gap-2">
+                {Array(totalQuestions).fill(0).map((_, idx) => (
+                  <button
+                    key={idx}
+                    className={`
+                      question-dot 
+                      ${idx === currentQ ? 'active' : ''} 
+                      ${answers[idx] !== null ? 'answered' : ''}
+                    `}
+                    onClick={() => setCurrentQ(idx)}
+                    disabled={submitting}
+                  >
+                    {idx + 1}
+                  </button>
+                ))}
+              </div>
+
+              {currentQ === totalQuestions - 1 ? (
+                <Button
+                  variant="success"
+                  onClick={handleSubmit}
+                  disabled={answers.some(a => a === null) || submitting}
+                >
+                  {submitting ? (
+                    <>
+                      <Spinner
+                        as="span"
+                        animation="border"
+                        size="sm"
+                        role="status"
+                        aria-hidden="true"
+                        className="me-2"
+                      />
+                      Submitting...
+                    </>
+                  ) : (
+                    'Submit'
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  variant="primary"
+                  onClick={() => setCurrentQ(prev => prev + 1)}
+                  disabled={submitting}
+                >
+                  Next
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+        {submitted && (
+          <div className="score-section">
+            <div className="score-circle">
+              <div>
+                <div className="score-label">Score</div>
+                <div className="score-value">
+                  {score}/{assignmentSet.questions.reduce((acc, q) => acc + q.marks, 0)}
+                </div>
               </div>
             </div>
-          ))}
-        </div>
-        {!isCorrect && (
-          <Alert variant="info" className="mt-3 mb-0">
-            The correct answer was: {question.options[parseInt(question.correctAnswer)]}
-          </Alert>
-        )}
-      </Card.Body>
-    </Card>
-  );
-})}
-        </div>
+            <h5 className="mt-4 text-center">
+              {score === assignmentSet.questions.reduce((acc, q) => acc + q.marks, 0) 
+                ? "Perfect Score! Assignment Complete!" 
+                : "Assignment Submitted"}
+            </h5>
+            <div className="mt-3 text-center">
+              <Button
+                variant="primary"
+                onClick={() => setShowReview(!showReview)}
+                className="me-2"
+              >
+                {showReview ? 'Hide Review' : 'Show Review'}
+              </Button>
+              {score === assignmentSet.questions.reduce((acc, q) => acc + q.marks, 0) && (
+                <Button
+                  variant="success"
+                  onClick={() => navigate(`/courses/${id}`)}
+                >
+                  Return to Course
+                </Button>
+              )}
+              {score < assignmentSet.questions.reduce((acc, q) => acc + q.marks, 0) && (
+                <Button
+                  variant="success"
+                  onClick={handleNewAttempt}
+                >
+                  {assignmentSet && course.units[parseInt(unitIndex)].assignment.assignmentSets.length === 1
+                    ? "Retry Assignment"
+                    : "Try Another Set"}
+                </Button>
+              )}
+            </div>
+            
+            {showReview && (
+              <div className="review-section mt-4">
+                <div className="score-summary mb-4">
+                  <Card className="summary-card">
+                    <Card.Body>
+                      <h6>Assignment Summary</h6>
+                      <div className="d-flex justify-content-between align-items-center">
+                        <span>Total Questions:</span>
+                        <span>{assignmentSet.questions.length}</span>
+                      </div>
+                      <div className="d-flex justify-content-between align-items-center mt-2">
+                        <span>Correct Answers:</span>
+                        <span className="text-success">
+                          {assignmentSet.questions.filter((q, idx) => 
+                            answers[idx] === parseInt(q.correctAnswer)
+                          ).length}
+                        </span>
+                      </div>
+                      <div className="d-flex justify-content-between align-items-center mt-2">
+                        <span>Score Achieved:</span>
+                        <span className={score === assignmentSet.questions.reduce((acc, q) => acc + q.marks, 0) 
+                          ? "text-success" 
+                          : "text-warning"
+                        }>
+                          {((score / assignmentSet.questions.reduce((acc, q) => acc + q.marks, 0)) * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                    </Card.Body>
+                  </Card>
+                </div>
 
-        <div className="review-actions mt-4 text-center">
-          {score < assignmentSet.questions.reduce((acc, q) => acc + q.marks, 0) ? (
-            <Alert variant="warning">
-              You need a perfect score to complete this unit. {assignmentSet && course.units[parseInt(unitIndex)].assignment.assignmentSets.length === 1
-                ? "Retry the assignment until you achieve a perfect score."
-                : "Try another set!"}
-            </Alert>
-          ) : (
-            <Alert variant="success">
-              Congratulations! You've completed this unit's assignment!
-            </Alert>
-          )}
-          
-          <Button
-            variant={score === assignmentSet.questions.reduce((acc, q) => acc + q.marks, 0) 
-              ? "success" 
-              : "primary"
-            }
-            onClick={() => {
-              if (score === assignmentSet.questions.reduce((acc, q) => acc + q.marks, 0)) {
-                navigate(`/courses/${id}`);
-              } else {
-                handleNewAttempt();
-              }
-            }}
-            className="mt-3"
-          >
-            {score === assignmentSet.questions.reduce((acc, q) => acc + q.marks, 0)
-              ? "Return to Course"
-              : (assignmentSet && course.units[parseInt(unitIndex)].assignment.assignmentSets.length === 1
-                ? "Retry Assignment"
-                : "Try Another Set")}
-          </Button>
-        </div>
-      </div>
-    )}
-  </div>
-)}
+                <div className="questions-review">
+                  {assignmentSet.questions.map((question, originalIdx) => {
+                    // Find the shuffled index for this original question
+                    const shuffledIdx = questionOrder.indexOf(originalIdx);
+                    const userAnswer = answers[shuffledIdx];
+                    const isCorrect = userAnswer === parseInt(question.correctAnswer);
+
+                    return (
+                      <Card key={originalIdx} className={`question-review-card mb-4 ${isCorrect ? 'border-success' : 'border-danger'}`}>
+                        <Card.Header className="d-flex justify-content-between align-items-center">
+                          <span>Question {originalIdx + 1}</span>
+                          <Badge bg={isCorrect ? "success" : "danger"}>
+                            {isCorrect ? (
+                              <><FaCheckCircle className="me-1" /> {question.marks} marks</>
+                            ) : (
+                              <><FaTimes className="me-1" /> 0/{question.marks} marks</>
+                            )}
+                          </Badge>
+                        </Card.Header>
+                        <Card.Body>
+                          <Card.Text className="mb-4">{question.questionText}</Card.Text>
+                          <div className="options-grid">
+                            {question.options.map((option, optIdx) => (
+                              <div
+                                key={optIdx}
+                                className={`
+                                  option-item p-3 rounded
+                                  ${optIdx === userAnswer ? 'selected' : ''}
+                                  ${optIdx === parseInt(question.correctAnswer) ? 'correct' : ''}
+                                  ${optIdx === userAnswer && !isCorrect ? 'incorrect' : ''}
+                                `}
+                              >
+                                <div className="d-flex align-items-center">
+                                  <div className="option-marker me-3">
+                                    {optIdx === parseInt(question.correctAnswer) && (
+                                      <FaCheckCircle className="text-success" />
+                                    )}
+                                    {optIdx === userAnswer && !isCorrect && (
+                                      <FaTimes className="text-danger" />
+                                    )}
+                                  </div>
+                                  <div className="option-text">{option}</div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          {!isCorrect && (
+                            <Alert variant="info" className="mt-3 mb-0">
+                              The correct answer was: {question.options[parseInt(question.correctAnswer)]}
+                            </Alert>
+                          )}
+                        </Card.Body>
+                      </Card>
+                    );
+                  })}
+                </div>
+
+                <div className="review-actions mt-4 text-center">
+                  {score < assignmentSet.questions.reduce((acc, q) => acc + q.marks, 0) ? (
+                    <Alert variant="warning">
+                      You need a perfect score to complete this unit. {assignmentSet && course.units[parseInt(unitIndex)].assignment.assignmentSets.length === 1
+                        ? "Retry the assignment until you achieve a perfect score."
+                        : "Try another set!"}
+                    </Alert>
+                  ) : (
+                    <Alert variant="success">
+                      Congratulations! You've completed this unit's assignment!
+                    </Alert>
+                  )}
+                  
+                  <Button
+                    variant={score === assignmentSet.questions.reduce((acc, q) => acc + q.marks, 0) 
+                      ? "success" 
+                      : "primary"
+                    }
+                    onClick={() => {
+                      if (score === assignmentSet.questions.reduce((acc, q) => acc + q.marks, 0)) {
+                        navigate(`/courses/${id}`);
+                      } else {
+                        handleNewAttempt();
+                      }
+                    }}
+                    className="mt-3"
+                  >
+                    {score === assignmentSet.questions.reduce((acc, q) => acc + q.marks, 0)
+                      ? "Return to Course"
+                      : (assignmentSet && course.units[parseInt(unitIndex)].assignment.assignmentSets.length === 1
+                        ? "Retry Assignment"
+                        : "Try Another Set")}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         </Card.Body>
       </Card>
     </Container>
-  );
+     );
 };
 
 export default AssignmentQuiz;

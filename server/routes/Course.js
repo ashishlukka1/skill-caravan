@@ -259,7 +259,6 @@ router.post("/:id/enroll", authMiddleware, async (req, res) => {
 
     if (!course) {
       await session.abortTransaction();
-      session.endSession();
       return res.status(404).json({ message: "Course not found" });
     }
 
@@ -269,7 +268,6 @@ router.post("/:id/enroll", authMiddleware, async (req, res) => {
       )
     ) {
       await session.abortTransaction();
-      session.endSession();
       return res.status(400).json({ message: "Already enrolled in this course" });
     }
 
@@ -316,8 +314,6 @@ router.post("/:id/enroll", authMiddleware, async (req, res) => {
 
     await Promise.all([user.save({ session }), course.save({ session })]);
     await session.commitTransaction();
-    session.endSession();
-
     res.status(201).json({
       message: "Successfully enrolled in course",
       enrollment,
@@ -326,7 +322,6 @@ router.post("/:id/enroll", authMiddleware, async (req, res) => {
     if (session) {
       try {
         await session.abortTransaction();
-        session.endSession();
       } catch (e) {}
     }
     console.error("Enrollment error:", err);
@@ -341,6 +336,10 @@ router.post("/:id/enroll", authMiddleware, async (req, res) => {
       .json({
         message: err.message || "Error enrolling in course",
       });
+  } finally {
+    if (session) {
+      session.endSession();
+    }
   }
 });
 // --- GET COURSE BY ID ---

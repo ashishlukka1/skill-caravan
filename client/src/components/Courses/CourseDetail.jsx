@@ -1,21 +1,16 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Container, Row, Col, Badge, Spinner, Alert, Button, ProgressBar, Card, Accordion, Modal } from "react-bootstrap";
-import { FaLock, FaCheckCircle, FaChevronRight, FaPlay, FaFile } from "react-icons/fa";
+import { FaLock, FaCheckCircle, FaChevronRight, FaPlay, FaFile, FaCertificate } from "react-icons/fa";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "../../utils/axios";
 import { AuthContext } from "../../context/AuthContext";
-import "./CourseDetail.css";  
+import "./CourseDetail.css";
 
 const ResourceModal = ({ resource, show, onHide, onComplete }) => {
   if (!resource) return null;
-
-  //to prevent closing the modal if the resouce is a video file or video URL
   const isVideo = resource.type === 'video_file' || resource.type === 'video_url';
-
   const isYouTubeUrl = (url) =>
     url.includes("youtube.com") || url.includes("youtu.be");
-
-
   const getYouTubeEmbedUrl = (url) => {
     if (url.includes("youtube.com")) {
       const urlObj = new URL(url);
@@ -28,7 +23,6 @@ const ResourceModal = ({ resource, show, onHide, onComplete }) => {
     }
     return url;
   };
-
   return (
     <Modal
       show={show}
@@ -75,7 +69,6 @@ const ResourceModal = ({ resource, show, onHide, onComplete }) => {
   );
 };
 
-
 const CourseDetail = () => {
   const [course, setCourse] = useState(null);
   const [progress, setProgress] = useState(null);
@@ -86,6 +79,9 @@ const CourseDetail = () => {
   const [enrolling, setEnrolling] = useState(false);
   const [selectedResource, setSelectedResource] = useState(null);
   const [showResourceModal, setShowResourceModal] = useState(false);
+
+  // --- Certificate Notification State ---
+  const [showCertAlert, setShowCertAlert] = useState(false);
 
   const { id } = useParams();
   const navigate = useNavigate();
@@ -122,6 +118,21 @@ const CourseDetail = () => {
     fetchData();
   }, [id, user]);
 
+  // --- Certificate Notification Logic ---
+  const certificate = progress?.certificate && progress.certificate.issued ? progress.certificate : null;
+  useEffect(() => {
+    if (
+      progress &&
+      progress.status === "completed" &&
+      certificate &&
+      certificate.certificateUrl
+    ) {
+      setShowCertAlert(true);
+      const timer = setTimeout(() => setShowCertAlert(false), 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [progress, certificate]);
+
   const handleEnroll = async () => {
     if (!user) {
       navigate('/login');
@@ -150,24 +161,24 @@ const CourseDetail = () => {
 
   const [markingLesson, setMarkingLesson] = useState({}); // { "unitIdx-lessonIdx": true }
 
-const handleLessonComplete = async (unitIdx, lessonIdx) => {
-  if (!isEnrolled) return;
-  setMarkingLesson(prev => ({ ...prev, [`${unitIdx}-${lessonIdx}`]: true }));
-  try {
-    await axios.post(
-      `/api/progress/${id}/unit/${unitIdx}/lesson/${lessonIdx}`,
-      { completed: true }
-    );
-    // Fetch the updated progress
-    const progressRes = await axios.get(`/api/progress/${id}`);
-    setProgress(progressRes.data);
-  } catch (err) {
-    console.error("Error completing lesson:", err);
-    setError("Failed to update lesson progress");
-  } finally {
-    setMarkingLesson(prev => ({ ...prev, [`${unitIdx}-${lessonIdx}`]: false }));
-  }
-};
+  const handleLessonComplete = async (unitIdx, lessonIdx) => {
+    if (!isEnrolled) return;
+    setMarkingLesson(prev => ({ ...prev, [`${unitIdx}-${lessonIdx}`]: true }));
+    try {
+      await axios.post(
+        `/api/progress/${id}/unit/${unitIdx}/lesson/${lessonIdx}`,
+        { completed: true }
+      );
+      // Fetch the updated progress
+      const progressRes = await axios.get(`/api/progress/${id}`);
+      setProgress(progressRes.data);
+    } catch (err) {
+      console.error("Error completing lesson:", err);
+      setError("Failed to update lesson progress");
+    } finally {
+      setMarkingLesson(prev => ({ ...prev, [`${unitIdx}-${lessonIdx}`]: false }));
+    }
+  };
 
   const handleResourceComplete = async (unitIdx, lessonIdx, resourceId) => {
     if (!isEnrolled) return;
@@ -242,127 +253,126 @@ const handleLessonComplete = async (unitIdx, lessonIdx) => {
   };
 
   // Helper to check if assignment is perfectly completed
- const isAssignmentPerfect = (unit, unitProgress) => {
-  if (!unit || !unitProgress?.assignment) return false;
-  // Find the set that was last assigned/submitted
-  let assignedSet;
-  if (unitProgress.assignment.assignedSetNumber) {
-    assignedSet = unit.assignment.assignmentSets.find(
-      set => set.setNumber === unitProgress.assignment.assignedSetNumber
+  const isAssignmentPerfect = (unit, unitProgress) => {
+    if (!unit || !unitProgress?.assignment) return false;
+    let assignedSet;
+    if (unitProgress.assignment.assignedSetNumber) {
+      assignedSet = unit.assignment.assignmentSets.find(
+        set => set.setNumber === unitProgress.assignment.assignedSetNumber
+      );
+    } else if (unit.assignment.assignmentSets.length === 1) {
+      assignedSet = unit.assignment.assignmentSets[0];
+    }
+    const totalScore = assignedSet
+      ? assignedSet.questions.reduce((acc, q) => acc + q.marks, 0)
+      : 0;
+    return (
+      unitProgress.assignment.status === "submitted" &&
+      unitProgress.assignment.score === totalScore &&
+      totalScore > 0
     );
-  } else if (unit.assignment.assignmentSets.length === 1) {
-    assignedSet = unit.assignment.assignmentSets[0];
-  }
-  const totalScore = assignedSet
-    ? assignedSet.questions.reduce((acc, q) => acc + q.marks, 0)
-    : 0;
-  return (
-    unitProgress.assignment.status === "submitted" &&
-    unitProgress.assignment.score === totalScore &&
-    totalScore > 0
-  );
-};
+  };
 
-const isAssignmentSubmitted = (unitProgress) =>
-  unitProgress?.assignment?.status === "submitted";
+  const isAssignmentSubmitted = (unitProgress) =>
+    unitProgress?.assignment?.status === "submitted";
 
-const getAssignmentButtonText = (unitIdx, unitProgress, unit) => {
-  const isUnitUnlocked = unitIdx === 0 || progress?.unitsProgress?.[unitIdx - 1]?.completed;
-  if (!isUnitUnlocked) return "Complete previous unit first";
-  if (!areAllLessonsCompleted(unitIdx)) return "Complete all lessons first";
-  if (isAssignmentPerfect(unit, unitProgress)) return "Assignment Complete";
-  if (isAssignmentSubmitted(unitProgress)) return "Review Assignment";
-  if (!unitProgress?.assignment?.assignedSetNumber) return "Start Assignment";
-  return "Continue Assignment";
-};
+  const getAssignmentButtonText = (unitIdx, unitProgress, unit) => {
+    const isUnitUnlocked = unitIdx === 0 || progress?.unitsProgress?.[unitIdx - 1]?.completed;
+    if (!isUnitUnlocked) return "Complete previous unit first";
+    if (!areAllLessonsCompleted(unitIdx)) return "Complete all lessons first";
+    if (isAssignmentPerfect(unit, unitProgress)) return "Assignment Complete";
+    if (isAssignmentSubmitted(unitProgress)) return "Review Assignment";
+    if (!unitProgress?.assignment?.assignedSetNumber) return "Start Assignment";
+    return "Continue Assignment";
+  };
 
   const renderAssignment = (unit, unitIdx) => {
-  if (!unit.assignment?.assignmentSets?.length) return null;
-  const unitProgress = progress?.unitsProgress?.[unitIdx];
-  const isUnitUnlocked = unitIdx === 0 || progress?.unitsProgress?.[unitIdx - 1]?.completed;
-  const assignedSetNumber = unitProgress?.assignment?.assignedSetNumber;
-  let assignedSet;
-  if (assignedSetNumber) {
-    assignedSet = unit.assignment.assignmentSets.find(set => set.setNumber === assignedSetNumber);
-  } else if (unit.assignment.assignmentSets.length === 1) {
-    assignedSet = unit.assignment.assignmentSets[0];
-  }
-  const totalScore = assignedSet
-    ? assignedSet.questions.reduce((acc, q) => acc + q.marks, 0)
-    : 0;
-  const assignmentPerfect = isAssignmentPerfect(unit, unitProgress);
-  const assignmentSubmitted = isAssignmentSubmitted(unitProgress);
+    if (!unit.assignment?.assignmentSets?.length) return null;
+    const unitProgress = progress?.unitsProgress?.[unitIdx];
+    const isUnitUnlocked = unitIdx === 0 || progress?.unitsProgress?.[unitIdx - 1]?.completed;
+    const assignedSetNumber = unitProgress?.assignment?.assignedSetNumber;
+    let assignedSet;
+    if (assignedSetNumber) {
+      assignedSet = unit.assignment.assignmentSets.find(set => set.setNumber === assignedSetNumber);
+    } else if (unit.assignment.assignmentSets.length === 1) {
+      assignedSet = unit.assignment.assignmentSets[0];
+    }
+    const totalScore = assignedSet
+      ? assignedSet.questions.reduce((acc, q) => acc + q.marks, 0)
+      : 0;
+    const assignmentPerfect = isAssignmentPerfect(unit, unitProgress);
+    const assignmentSubmitted = isAssignmentSubmitted(unitProgress);
 
-  return (
-    <div className="assignment-section mt-4">
-      <h6 className="section-title">Assignment</h6>
-      <Card className="assignment-card1">
-        <Card.Body>
-          {assignedSet ? (
-            <>
-              <div className="d-flex justify-content-between align-items-start mb-3">
-                <div>
-                  <h5 className="assignment-title">{assignedSet.title}</h5>
-                  <p className="assignment-description mb-2">{assignedSet.description}</p>
-                  <Badge bg="info" className="me-2">Set {assignedSet.setNumber}</Badge>
-                  <Badge bg="secondary">Difficulty: {assignedSet.difficulty}</Badge>
-                </div>
-                {assignmentSubmitted && (
-                  <Badge bg={assignmentPerfect ? "success" : "warning"}>
-                    Score: {unitProgress.assignment.score}
-                  </Badge>
-                )}
-              </div>
-              <div className="text-end">
-                {assignmentPerfect ? (
-                  <Badge bg="success" className="py-2 px-3 fs-6">Assignment Complete</Badge>
-                ) : (
-                  <Button
-                    variant={
-                      assignmentSubmitted
-                        ? "outline-success"
-                        : "primary"
-                    }
-                    onClick={() => {
-                      navigate(`/courses/${id}/assignment/${unitIdx}`);
-                    }}
-                    disabled={
-                      !isUnitUnlocked ||
-                      !areAllLessonsCompleted(unitIdx)
-                    }
-                  >
-                    {getAssignmentButtonText(unitIdx, unitProgress, unit)}
-                  </Button>
-                )}
-              </div>
-            </>
-          ) : (
-            assignmentPerfect ? (
-              <div className="text-center py-3">
-                <Badge bg="success">Assignment Complete</Badge>
-              </div>
-            ) : isUnitUnlocked && areAllLessonsCompleted(unitIdx) ? (
+    return (
+      <div className="assignment-section mt-4">
+        <h6 className="section-title">Assignment</h6>
+        <Card className="assignment-card1">
+          <Card.Body>
+            {assignedSet ? (
               <>
-                <p className="mb-3">Ready to start your assignment?</p>
-                <Button
-                  variant="primary"
-                  onClick={() => handleAssignmentStart(unitIdx)}
-                >
-                  Start Assignment
-                </Button>
+                <div className="d-flex justify-content-between align-items-start mb-3">
+                  <div>
+                    <h5 className="assignment-title">{assignedSet.title}</h5>
+                    <p className="assignment-description mb-2">{assignedSet.description}</p>
+                    <Badge bg="info" className="me-2">Set {assignedSet.setNumber}</Badge>
+                    <Badge bg="secondary">Difficulty: {assignedSet.difficulty}</Badge>
+                  </div>
+                  {assignmentSubmitted && (
+                    <Badge bg={assignmentPerfect ? "success" : "warning"}>
+                      Score: {unitProgress.assignment.score}
+                    </Badge>
+                  )}
+                </div>
+                <div className="text-end">
+                  {assignmentPerfect ? (
+                    <Badge bg="success" className="py-2 px-3 fs-6">Assignment Complete</Badge>
+                  ) : (
+                    <Button
+                      variant={
+                        assignmentSubmitted
+                          ? "outline-success"
+                          : "primary"
+                      }
+                      onClick={() => {
+                        navigate(`/courses/${id}/assignment/${unitIdx}`);
+                      }}
+                      disabled={
+                        !isUnitUnlocked ||
+                        !areAllLessonsCompleted(unitIdx)
+                      }
+                    >
+                      {getAssignmentButtonText(unitIdx, unitProgress, unit)}
+                    </Button>
+                  )}
+                </div>
               </>
             ) : (
-              <>
-                <FaLock className="mb-2" size={24} />
-                <p className="mb-0">Complete all lessons to unlock the assignment.</p>
-              </>
-            )
-          )}
-        </Card.Body>
-      </Card>
-    </div>
-  );
-};
+              assignmentPerfect ? (
+                <div className="text-center py-3">
+                  <Badge bg="success">Assignment Complete</Badge>
+                </div>
+              ) : isUnitUnlocked && areAllLessonsCompleted(unitIdx) ? (
+                <>
+                  <p className="mb-3">Ready to start your assignment?</p>
+                  <Button
+                    variant="primary"
+                    onClick={() => handleAssignmentStart(unitIdx)}
+                  >
+                    Start Assignment
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <FaLock className="mb-2" size={24} />
+                  <p className="mb-0">Complete all lessons to unlock the assignment.</p>
+                </>
+              )
+            )}
+          </Card.Body>
+        </Card>
+      </div>
+    );
+  };
 
   if (loading) {
     return (
@@ -404,6 +414,30 @@ const getAssignmentButtonText = (unitIdx, unitProgress, unit) => {
 
   return (
     <div className="course-detail-page min-vh-100">
+      {/* --- Certificate Notification Alert --- */}
+      {showCertAlert && certificate && (
+        <Container className="mt-4">
+          <Alert
+            variant="success"
+            onClose={() => setShowCertAlert(false)}
+            dismissible
+            className="text-center"
+          >
+            {/* <FaCertificate className="me-2" /> */}
+            Congratulations! Your certificate has been issued.
+            <br />
+            <a
+              href={certificate.certificateUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-success mt-2"
+            >
+              View Certificate
+            </a>
+          </Alert>
+        </Container>
+      )}
+
       <div className="course-header">
         <Container>
           <Row className="align-items-center">
@@ -588,18 +622,18 @@ const getAssignmentButtonText = (unitIdx, unitProgress, unit) => {
                             )}
                             <div className="d-flex justify-content-between align-items-center">
                               <Button
-  size="sm"
-  variant={isLessonCompleted ? "success" : "outline-success"}
-  onClick={() => handleLessonComplete(selectedUnit, idx)}
-  disabled={!isUnitUnlocked || isLessonCompleted || markingLesson[`${selectedUnit}-${idx}`]}
-  className={`mark-complete-btn ${isLessonCompleted ? 'completed' : ''}`}
->
-  {markingLesson[`${selectedUnit}-${idx}`]
-    ? <Spinner size="sm" animation="border" />
-    : isLessonCompleted
-      ? (<><FaCheckCircle className="me-1" /> Completed</>)
-      : "Mark as Complete"}
-</Button>
+                                size="sm"
+                                variant={isLessonCompleted ? "success" : "outline-success"}
+                                onClick={() => handleLessonComplete(selectedUnit, idx)}
+                                disabled={!isUnitUnlocked || isLessonCompleted || markingLesson[`${selectedUnit}-${idx}`]}
+                                className={`mark-complete-btn ${isLessonCompleted ? 'completed' : ''}`}
+                              >
+                                {markingLesson[`${selectedUnit}-${idx}`]
+                                  ? <Spinner size="sm" animation="border" />
+                                  : isLessonCompleted
+                                    ? (<><FaCheckCircle className="me-1" /> Completed</>)
+                                    : "Mark as Complete"}
+                              </Button>
                             </div>
                           </Accordion.Body>
                         </Accordion.Item>
@@ -612,6 +646,22 @@ const getAssignmentButtonText = (unitIdx, unitProgress, unit) => {
               </Card>
             </Col>
           </Row>
+        </Container>
+      )}
+
+      {/* --- Certificate Link at Bottom --- */}
+      {certificate && (
+        <Container className="my-5 text-center">
+          {/* <hr /> */}
+
+          <a
+            href={certificate.certificateUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-outline-primary mt-2 mb-2  "
+          >
+            View Certificate
+          </a>
         </Container>
       )}
 

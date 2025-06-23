@@ -5,10 +5,30 @@ const universalCertificateSchema = new mongoose.Schema({
   templateUrl: { type: String }, // Cloudinary URL
   templateStoragePath: { type: String }, // Cloudinary public_id
   textSettings: {
-    namePosition: { x: Number, y: Number },
-    coursePosition: { x: Number, y: Number },
-    datePosition: { x: Number, y: Number },
-    qrPosition: { x: Number, y: Number },
+    nameBox: {
+      x: { type: Number }, // percent (0-100)
+      y: { type: Number },
+      width: { type: Number },
+      height: { type: Number }
+    },
+    courseBox: {
+      x: { type: Number },
+      y: { type: Number },
+      width: { type: Number },
+      height: { type: Number }
+    },
+    dateBox: {
+      x: { type: Number },
+      y: { type: Number },
+      width: { type: Number },
+      height: { type: Number }
+    },
+    qrBox: {
+      x: { type: Number },
+      y: { type: Number },
+      width: { type: Number },
+      height: { type: Number }
+    },
     font: {
       family: { type: String, default: "Arial" },
       color: { type: String, default: "#000000" },

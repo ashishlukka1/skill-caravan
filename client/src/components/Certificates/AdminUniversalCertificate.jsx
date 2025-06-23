@@ -1,6 +1,18 @@
 import React, { useState, useRef, useEffect } from "react";
+import Moveable from "react-moveable";
 import axios from "../../utils/axios";
 import { Button, Form, Card, Alert } from "react-bootstrap";
+
+const CANVAS_WIDTH = 800;
+const CANVAS_HEIGHT = 600;
+
+const fontFamilies = [
+  "Arial",
+  "Times New Roman",
+  "Verdana",
+  "Georgia",
+  "Courier New",
+];
 
 const defaultFont = {
   family: "Arial",
@@ -8,30 +20,74 @@ const defaultFont = {
   nameSize: 32,
   courseSize: 32,
   dateSize: 32,
-  qrSize: 80,
+  qrSize: 40,
 };
-const defaultNamePosition = { x: 100, y: 100 };
-const defaultCoursePosition = { x: 100, y: 200 };
-const defaultDatePosition = { x: 100, y: 300 };
-const defaultQrPosition = { x: 400, y: 350 };
+
+const initialFields = [
+  {
+    key: "name",
+    label: "User Name",
+    text: "John Doe",
+    x: 250,
+    y: 120,
+    width: 300,
+    height: 60,
+    fontSizeKey: "nameSize",
+    editing: false,
+  },
+  {
+    key: "course",
+    label: "Course Name",
+    text: "Course Name",
+    x: 250,
+    y: 200,
+    width: 300,
+    height: 60,
+    fontSizeKey: "courseSize",
+    editing: false,
+  },
+  {
+    key: "date",
+    label: "Awarded Date",
+    text: "01/01/2025",
+    x: 250,
+    y: 280,
+    width: 300,
+    height: 60,
+    fontSizeKey: "dateSize",
+    editing: false,
+  },
+  {
+    key: "qr",
+    label: "QR",
+    text: "QR",
+    x: 600,
+    y: 400,
+    width: 80,
+    height: 80,
+    fontSizeKey: "qrSize",
+    editing: false,
+  },
+];
 
 const AdminUniversalCertificate = () => {
   const [template, setTemplate] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
-  const [namePosition, setNamePosition] = useState(defaultNamePosition);
-  const [coursePosition, setCoursePosition] = useState(defaultCoursePosition);
-  const [datePosition, setDatePosition] = useState(defaultDatePosition);
-  const [qrPosition, setQrPosition] = useState(defaultQrPosition);
+  const [fields, setFields] = useState(initialFields);
   const [font, setFont] = useState(defaultFont);
+  const [selectedField, setSelectedField] = useState(null);
+  const [zoom, setZoom] = useState(1);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
-  const [zoom, setZoom] = useState(1);
-
-  // For keeping the existing template if not uploading a new one
   const [existingTemplateUrl, setExistingTemplateUrl] = useState("");
-
   const imgRef = useRef();
+  const fieldRefs = useRef([]);
+
+  // Convert px to percent
+  const pxToPercent = (val, total) => (val / total) * 100;
+  // Convert percent to px
+  const percentToPx = (percent, total) => (percent / 100) * total;
 
   // Fetch existing universal certificate if present
   useEffect(() => {
@@ -42,21 +98,49 @@ const AdminUniversalCertificate = () => {
           setPreviewUrl(res.data.templateUrl);
           setExistingTemplateUrl(res.data.templateUrl);
         }
-        if (res.data.textSettings?.namePosition)
-          setNamePosition(res.data.textSettings.namePosition);
-        if (res.data.textSettings?.coursePosition)
-          setCoursePosition(res.data.textSettings.coursePosition);
-        if (res.data.textSettings?.datePosition)
-          setDatePosition(res.data.textSettings.datePosition);
-        if (res.data.textSettings?.qrPosition)
-          setQrPosition(res.data.textSettings.qrPosition);
-        if (res.data.textSettings?.font)
-          setFont({ ...defaultFont, ...res.data.textSettings.font });
+        if (res.data.textSettings) {
+          // If backend is already using percent-based boxes, convert to px for UI
+          const { nameBox, courseBox, dateBox, qrBox, font: f } = res.data.textSettings;
+          if (nameBox && courseBox && dateBox && qrBox) {
+            setFields([
+              {
+                ...initialFields[0],
+                x: percentToPx(nameBox.x, CANVAS_WIDTH),
+                y: percentToPx(nameBox.y, CANVAS_HEIGHT),
+                width: percentToPx(nameBox.width, CANVAS_WIDTH),
+                height: percentToPx(nameBox.height, CANVAS_HEIGHT),
+              },
+              {
+                ...initialFields[1],
+                x: percentToPx(courseBox.x, CANVAS_WIDTH),
+                y: percentToPx(courseBox.y, CANVAS_HEIGHT),
+                width: percentToPx(courseBox.width, CANVAS_WIDTH),
+                height: percentToPx(courseBox.height, CANVAS_HEIGHT),
+              },
+              {
+                ...initialFields[2],
+                x: percentToPx(dateBox.x, CANVAS_WIDTH),
+                y: percentToPx(dateBox.y, CANVAS_HEIGHT),
+                width: percentToPx(dateBox.width, CANVAS_WIDTH),
+                height: percentToPx(dateBox.height, CANVAS_HEIGHT),
+              },
+              {
+                ...initialFields[3],
+                x: percentToPx(qrBox.x, CANVAS_WIDTH),
+                y: percentToPx(qrBox.y, CANVAS_HEIGHT),
+                width: percentToPx(qrBox.width, CANVAS_WIDTH),
+                height: percentToPx(qrBox.height, CANVAS_HEIGHT),
+              },
+            ]);
+          }
+          if (f) setFont({ ...defaultFont, ...f });
+        }
       } catch (err) {
         // ignore error if not set
       }
     };
     fetchUniversal();
+    // eslint-disable-next-line
   }, []);
 
   // Handle template file change and preview
@@ -70,134 +154,141 @@ const AdminUniversalCertificate = () => {
     }
   };
 
-  // Set position by clicking on the image
-  const handleImageClick = (e, field) => {
-    if (!imgRef.current) return;
-    const rect = imgRef.current.getBoundingClientRect();
-    const scaleX = imgRef.current.naturalWidth / rect.width;
-    const scaleY = imgRef.current.naturalHeight / rect.height;
-    const x = Math.round((e.clientX - rect.left) * scaleX);
-    const y = Math.round((e.clientY - rect.top) * scaleY);
-    if (field === "name") setNamePosition({ x, y });
-    if (field === "course") setCoursePosition({ x, y });
-    if (field === "date") setDatePosition({ x, y });
-    if (field === "qr") setQrPosition({ x, y });
+  // Moveable drag/resize handler (top-left based)
+  const updateField = (key, updates) => {
+    setFields((prev) =>
+      prev.map((f) =>
+        f.key === key
+          ? {
+              ...f,
+              ...updates,
+            }
+          : f
+      )
+    );
   };
 
-  // Font family/color
-  const handleFontChange = (e) => {
-    const { name, value } = e.target;
-    setFont((prev) => ({
-      ...prev,
-      [name]: name.includes("Size") ? Number(value) : value,
-    }));
+  // Edit text
+  const handleEditText = (key, value) => {
+    setFields((prev) =>
+      prev.map((f) => (f.key === key ? { ...f, text: value } : f))
+    );
+  };
+
+  // Font family/color/size change for selected field
+  const handleFieldStyle = (key, styleKey, value) => {
+    setFont((prev) =>
+      styleKey === "family" || styleKey === "color"
+        ? { ...prev, [styleKey]: value }
+        : { ...prev, [styleKey]: Number(value) }
+    );
   };
 
   // Submit universal certificate template and settings
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    setSuccess("");
-    try {
-      const formData = new FormData();
-      if (template) {
-        formData.append("template", template); // File object
-      }
-      formData.append(
-        "textSettings",
-        JSON.stringify({
-          namePosition,
-          coursePosition,
-          datePosition,
-          qrPosition,
-          font,
-        })
-      );
-      await axios.post("/api/courses/universal", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      setSuccess("Universal certificate template updated!");
-      if (template) {
-        // If new template uploaded, update preview
-        setExistingTemplateUrl(previewUrl);
-      }
-    } catch (err) {
-      setError(
-        err.response?.data?.message || "Failed to update universal certificate"
-      );
-    } finally {
-      setLoading(false);
+  // ...existing code...
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setError("");
+  setSuccess("");
+  try {
+    const formData = new FormData();
+    if (template) {
+      formData.append("template", template); // File object
     }
-  };
+    // Convert all fields to percent before sending
+    const textSettings = {
+      nameBox: {
+        x: pxToPercent(fields[0].x, CANVAS_WIDTH),
+        y: pxToPercent(fields[0].y, CANVAS_HEIGHT),
+        width: pxToPercent(fields[0].width, CANVAS_WIDTH),
+        height: pxToPercent(fields[0].height, CANVAS_HEIGHT),
+      },
+      courseBox: {
+        x: pxToPercent(fields[1].x, CANVAS_WIDTH),
+        y: pxToPercent(fields[1].y, CANVAS_HEIGHT),
+        width: pxToPercent(fields[1].width, CANVAS_WIDTH),
+        height: pxToPercent(fields[1].height, CANVAS_HEIGHT),
+      },
+      dateBox: {
+        x: pxToPercent(fields[2].x, CANVAS_WIDTH),
+        y: pxToPercent(fields[2].y, CANVAS_HEIGHT),
+        width: pxToPercent(fields[2].width, CANVAS_WIDTH),
+        height: pxToPercent(fields[2].height, CANVAS_HEIGHT),
+      },
+      qrBox: {
+        x: pxToPercent(fields[3].x, CANVAS_WIDTH),
+        y: pxToPercent(fields[3].y, CANVAS_HEIGHT),
+        width: pxToPercent(fields[3].width, CANVAS_WIDTH),
+        height: pxToPercent(fields[3].height, CANVAS_HEIGHT),
+      },
+      font,
+    };
+    formData.append("textSettings", JSON.stringify(textSettings));
+    await axios.post("/api/courses/universal", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    setSuccess("Universal certificate template updated!");
+    if (template) {
+      setExistingTemplateUrl(previewUrl);
+    }
+  } catch (err) {
+    setError(
+      err.response?.data?.message || "Failed to update universal certificate"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+// ...existing code...
 
   const resetFormatting = () => {
     setFont(defaultFont);
-    setNamePosition(defaultNamePosition);
-    setCoursePosition(defaultCoursePosition);
-    setDatePosition(defaultDatePosition);
-    setQrPosition(defaultQrPosition);
+    setFields(initialFields);
+    setSelectedField(null);
   };
 
-  // Overlay helpers
-  const getOverlayStyle = (pos, sizeKey) => {
-    if (!imgRef.current) return { display: "none" };
-    const naturalWidth = imgRef.current.naturalWidth || 500;
-    const naturalHeight = imgRef.current.naturalHeight || 350;
-    const width = 500 * zoom;
-    const height = 350 * zoom;
-    return {
-      position: "absolute",
-      left: pos.x * (width / naturalWidth),
-      top: pos.y * (height / naturalHeight),
-      fontFamily: font.family,
-      fontSize: font[sizeKey] * (width / naturalWidth),
-      color: font.color,
-      fontWeight: "bold",
-      pointerEvents: "none",
-    };
-  };
-
-  const getQrStyle = (pos) => {
-    if (!imgRef.current) return { display: "none" };
-    const naturalWidth = imgRef.current.naturalWidth || 500;
-    const naturalHeight = imgRef.current.naturalHeight || 350;
-    const width = 500 * zoom;
-    const height = 350 * zoom;
-    const size = font.qrSize * (width / naturalWidth);
-    return {
-      position: "absolute",
-      left: pos.x * (width / naturalWidth),
-      top: pos.y * (height / naturalHeight),
-      width: size,
-      height: size,
-      background: "#eee",
-      border: "1px dashed #aaa",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      pointerEvents: "none",
-    };
-  };
-
-  // Click-to-set-position logic
-  const setPositionByClick = (field) => {
-    alert(`Click on the certificate image to set the ${field} position.`);
-    if (!imgRef.current) return;
-    imgRef.current.style.cursor = "crosshair";
-    const handler = (e) => {
-      handleImageClick(e, field);
-      imgRef.current.style.cursor = "pointer";
-      imgRef.current.removeEventListener("click", handler);
-    };
-    imgRef.current.addEventListener("click", handler);
-  };
+  // For drag/resize overlays (top-left, but backend uses percent box)
+  const getFieldStyle = (field) => ({
+    position: "absolute",
+    left: field.x * zoom,
+    top: field.y * zoom,
+    width: field.width * zoom,
+    height: field.height * zoom,
+    background:
+      selectedField === field.key
+        ? "#eaf6ff"
+        : "rgba(255,255,255,0.0)",
+    border:
+      selectedField === field.key
+        ? "2px solid #007bff"
+        : "1px solid #bbb",
+    borderRadius: 6,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "move",
+    zIndex: 2,
+    overflow: "hidden",
+    boxShadow:
+      selectedField === field.key
+        ? "0 0 8px #007bff55"
+        : undefined,
+    fontFamily: font.family,
+    fontSize: font[field.fontSizeKey] * zoom,
+    color: font.color,
+    fontWeight: "bold",
+    textAlign: "center",
+    padding: 2,
+    transition: "border 0.1s",
+    userSelect: "none",
+  });
 
   return (
     <div className="container py-4 mt-5">
       <Card className="mt-3">
         <Card.Body>
-          <h4>Default Certificate Template</h4>
+          <h4>Certificate Template Designer</h4>
           <div className="mb-3">
             <Form.Label>Zoom: {Math.round(zoom * 100)}%</Form.Label>
             <Form.Range
@@ -211,238 +302,227 @@ const AdminUniversalCertificate = () => {
           </div>
           <div className="d-flex flex-wrap">
             <div style={{ flex: 2, minWidth: 350 }}>
-              <div style={{
-                position: "relative",
-                width: 500 * zoom,
-                height: 350 * zoom,
-                margin: "auto",
-                border: "1px solid #ddd",
-                background: "#fafafa"
-              }}>
+              <div
+                style={{
+                  position: "relative",
+                  width: CANVAS_WIDTH * zoom,
+                  height: CANVAS_HEIGHT * zoom,
+                  margin: "auto",
+                  border: "1px solid #ddd",
+                  background: "#fafafa",
+                  overflow: "hidden",
+                  boxShadow: "0 2px 12px #0001",
+                  userSelect: "none",
+                }}
+                onClick={() => setSelectedField(null)}
+              >
+                {/* Render the image as a background layer */}
                 {(previewUrl || existingTemplateUrl) && (
-  <img
-    src={previewUrl || existingTemplateUrl}
-    alt="Certificate Template"
-    ref={imgRef}
-    style={{
-      width: "100%",
-      height: "100%",
-      objectFit: "contain",
-      cursor: "pointer"
-    }}
-  />
-)}
-                {/* Overlay sample text for each field */}
-                {(previewUrl || existingTemplateUrl) && (
-  <>
-    <div style={getOverlayStyle(namePosition, "nameSize")}>John Doe</div>
-    <div style={getOverlayStyle(coursePosition, "courseSize")}>Course Name</div>
-    <div style={getOverlayStyle(datePosition, "dateSize")}>01/01/2025</div>
-    <div style={getQrStyle(qrPosition)}>QR</div>
-  </>
-)}
+                  <img
+                    src={previewUrl || existingTemplateUrl}
+                    alt="Certificate Template"
+                    ref={imgRef}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "contain",
+                      pointerEvents: "none",
+                      userSelect: "none",
+                      position: "absolute",
+                      left: 0,
+                      top: 0,
+                      zIndex: 0,
+                    }}
+                    draggable={false}
+                  />
+                )}
+                {/* Render text fields above the image */}
+                {fields.map((field, idx) => (
+                  <React.Fragment key={field.key}>
+                    <div
+                      ref={el => (fieldRefs.current[idx] = el)}
+                      style={getFieldStyle(field)}
+                      onClick={e => {
+                        e.stopPropagation();
+                        setSelectedField(field.key);
+                      }}
+                      onDoubleClick={e => {
+                        e.stopPropagation();
+                        setFields((prev) =>
+                          prev.map((f) =>
+                            f.key === field.key
+                              ? { ...f, editing: true }
+                              : { ...f, editing: false }
+                          )
+                        );
+                      }}
+                    >
+                      {field.editing ? (
+                        <textarea
+                          autoFocus
+                          value={field.text}
+                          onChange={e =>
+                            handleEditText(field.key, e.target.value)
+                          }
+                          onBlur={() =>
+                            setFields(prev =>
+                              prev.map(f =>
+                                f.key === field.key
+                                  ? { ...f, editing: false }
+                                  : f
+                              )
+                            )
+                          }
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            background: "transparent",
+                            border: "none",
+                            outline: "none",
+                            fontFamily: font.family,
+                            fontSize: font[field.fontSizeKey] * zoom,
+                            color: font.color,
+                            fontWeight: "bold",
+                            textAlign: "center",
+                            resize: "none",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        />
+                      ) : (
+                        <span
+                          style={{
+                            width: "100%",
+                            textAlign: "center",
+                            whiteSpace: "pre-line",
+                            pointerEvents: "none",
+                          }}
+                        >
+                          {field.text}
+                        </span>
+                      )}
+                    </div>
+                    {selectedField === field.key && (
+                      <Moveable
+                        target={fieldRefs.current[idx]}
+                        origin={false}
+                        edge={false}
+                        draggable={true}
+                        resizable={true}
+                        throttleDrag={0}
+                        throttleResize={0}
+                        keepRatio={false}
+                        onDrag={({ left, top }) => {
+                          window.requestAnimationFrame(() => {
+                            updateField(field.key, {
+                              x: Math.round(left / zoom),
+                              y: Math.round(top / zoom),
+                            });
+                          });
+                        }}
+                        onResize={({ width, height, drag }) => {
+                          window.requestAnimationFrame(() => {
+                            updateField(field.key, {
+                              width: Math.max(60, width / zoom),
+                              height: Math.max(30, height / zoom),
+                              x: Math.round(drag.left / zoom),
+                              y: Math.round(drag.top / zoom),
+                            });
+                          });
+                        }}
+                        renderDirections={["nw", "ne", "sw", "se"]}
+                        padding={{ left: 0, top: 0, right: 0, bottom: 0 }}
+                        snappable={true}
+                        snapThreshold={5}
+                        bounds={{
+                          left: 0,
+                          top: 0,
+                          right: CANVAS_WIDTH * zoom,
+                          bottom: CANVAS_HEIGHT * zoom,
+                        }}
+                      />
+                    )}
+                  </React.Fragment>
+                ))}
               </div>
               <div className="text-center mt-2">
                 <small>
-                  Use "Set Position" then click on the image to set each field's position.<br />
-                  Use the zoom slider for precise placement.
+                  Drag, resize, and double-click to edit each text box.<br />
+                  Only User Name, Course Name, Awarded Date, and QR fields are available.
                 </small>
               </div>
             </div>
             <div style={{ flex: 1, minWidth: 250, marginLeft: 30 }}>
-              <h6>Text & QR Design</h6>
+              <h6>Text Field Design</h6>
+              {selectedField && (() => {
+                const field = fields.find(f => f.key === selectedField);
+                if (!field) return null;
+                return (
+                  <div className="mb-3 p-2 border rounded bg-light">
+                    <h6 className="mb-2">{field.label} Box</h6>
+                    <Form.Group className="mb-2">
+                      <Form.Label>Font Family</Form.Label>
+                      <Form.Select
+                        value={font.family}
+                        onChange={e =>
+                          handleFieldStyle(field.key, "family", e.target.value)
+                        }
+                      >
+                        {fontFamilies.map(f => (
+                          <option key={f}>{f}</option>
+                        ))}
+                      </Form.Select>
+                    </Form.Group>
+                    <Form.Group className="mb-2">
+                      <Form.Label>Font Size</Form.Label>
+                      <Form.Range
+                        min={10}
+                        max={100}
+                        value={font[field.fontSizeKey]}
+                        onChange={e =>
+                          handleFieldStyle(
+                            field.key,
+                            field.fontSizeKey,
+                            Number(e.target.value)
+                          )
+                        }
+                      />
+                      <span>{font[field.fontSizeKey]}px</span>
+                    </Form.Group>
+                    <Form.Group className="mb-2">
+                      <Form.Label>Font Color</Form.Label>
+                      <Form.Control
+                        type="color"
+                        value={font.color}
+                        onChange={e =>
+                          handleFieldStyle(field.key, "color", e.target.value)
+                        }
+                      />
+                      <span className="ms-2">{font.color}</span>
+                    </Form.Group>
+                  </div>
+                );
+              })()}
               <Form onSubmit={handleSubmit}>
                 <Form.Group className="mb-2">
-                  <Form.Label>Font Family</Form.Label>
-                  <Form.Select name="family" value={font.family} onChange={handleFontChange}>
-                    <option>Arial</option>
-                    <option>Times New Roman</option>
-                    <option>Verdana</option>
-                    <option>Georgia</option>
-                    <option>Courier New</option>
-                  </Form.Select>
-                </Form.Group>
-                <Form.Group className="mb-2">
-                  <Form.Label>Font Color</Form.Label>
+                  <Form.Label>Certificate Template (Image/PDF)</Form.Label>
                   <Form.Control
-                    type="color"
-                    name="color"
-                    value={font.color}
-                    onChange={handleFontChange}
+                    type="file"
+                    accept="image/*,application/pdf"
+                    onChange={handleTemplateChange}
                   />
-                  <span className="ms-2">{font.color}</span>
                 </Form.Group>
-                <Form.Group className="mb-2">
-                  <Form.Label>User Name Size</Form.Label>
-                  <Form.Range
-                    min={10}
-                    max={100}
-                    value={font.nameSize}
-                    name="nameSize"
-                    onChange={handleFontChange}
-                  />
-                  <span>{font.nameSize}px</span>
-                </Form.Group>
-                <Form.Group className="mb-2">
-                  <Form.Label>Course Name Size</Form.Label>
-                  <Form.Range
-                    min={10}
-                    max={100}
-                    value={font.courseSize}
-                    name="courseSize"
-                    onChange={handleFontChange}
-                  />
-                  <span>{font.courseSize}px</span>
-                </Form.Group>
-                <Form.Group className="mb-2">
-                  <Form.Label>Date Size</Form.Label>
-                  <Form.Range
-                    min={10}
-                    max={100}
-                    value={font.dateSize}
-                    name="dateSize"
-                    onChange={handleFontChange}
-                  />
-                  <span>{font.dateSize}px</span>
-                </Form.Group>
-                <Form.Group className="mb-2">
-                  <Form.Label>QR Code Size</Form.Label>
-                  <Form.Range
-                    min={40}
-                    max={200}
-                    value={font.qrSize}
-                    name="qrSize"
-                    onChange={handleFontChange}
-                  />
-                  <span>{font.qrSize}px</span>
-                </Form.Group>
-                {/* Position fields for each certificate field */}
-                <Form.Group className="mb-2">
-                  <Form.Label>Name Position</Form.Label>
-                  <div className="d-flex gap-2">
-                    <Form.Control
-                      type="number"
-                      name="x"
-                      value={namePosition.x}
-                      onChange={e => setNamePosition({ ...namePosition, x: Number(e.target.value) })}
-                      placeholder="X"
-                    />
-                    <Form.Control
-                      type="number"
-                      name="y"
-                      value={namePosition.y}
-                      onChange={e => setNamePosition({ ...namePosition, y: Number(e.target.value) })}
-                      placeholder="Y"
-                    />
-                    <Button
-                      variant="outline-secondary"
-                      size="sm"
-                      type="button"
-                      onClick={() => setPositionByClick("name")}
-                    >
-                      Set Position
-                    </Button>
-                  </div>
-                </Form.Group>
-                <Form.Group className="mb-2">
-                  <Form.Label>Course Name Position</Form.Label>
-                  <div className="d-flex gap-2">
-                    <Form.Control
-                      type="number"
-                      name="x"
-                      value={coursePosition.x}
-                      onChange={e => setCoursePosition({ ...coursePosition, x: Number(e.target.value) })}
-                      placeholder="X"
-                    />
-                    <Form.Control
-                      type="number"
-                      name="y"
-                      value={coursePosition.y}
-                      onChange={e => setCoursePosition({ ...coursePosition, y: Number(e.target.value) })}
-                      placeholder="Y"
-                    />
-                    <Button
-                      variant="outline-secondary"
-                      size="sm"
-                      type="button"
-                      onClick={() => setPositionByClick("course")}
-                    >
-                      Set Position
-                    </Button>
-                  </div>
-                </Form.Group>
-                <Form.Group className="mb-2">
-                  <Form.Label>Date Awarded Position</Form.Label>
-                  <div className="d-flex gap-2">
-                    <Form.Control
-                      type="number"
-                      name="x"
-                      value={datePosition.x}
-                      onChange={e => setDatePosition({ ...datePosition, x: Number(e.target.value) })}
-                      placeholder="X"
-                    />
-                    <Form.Control
-                      type="number"
-                      name="y"
-                      value={datePosition.y}
-                      onChange={e => setDatePosition({ ...datePosition, y: Number(e.target.value) })}
-                      placeholder="Y"
-                    />
-                    <Button
-                      variant="outline-secondary"
-                      size="sm"
-                      type="button"
-                      onClick={() => setPositionByClick("date")}
-                    >
-                      Set Position
-                    </Button>
-                  </div>
-                </Form.Group>
-                <Form.Group className="mb-2">
-                  <Form.Label>QR Code Position</Form.Label>
-                  <div className="d-flex gap-2">
-                    <Form.Control
-                      type="number"
-                      name="x"
-                      value={qrPosition.x}
-                      onChange={e => setQrPosition({ ...qrPosition, x: Number(e.target.value) })}
-                      placeholder="X"
-                    />
-                    <Form.Control
-                      type="number"
-                      name="y"
-                      value={qrPosition.y}
-                      onChange={e => setQrPosition({ ...qrPosition, y: Number(e.target.value) })}
-                      placeholder="Y"
-                    />
-                    <Button
-                      variant="outline-secondary"
-                      size="sm"
-                      type="button"
-                      onClick={() => setPositionByClick("qr")}
-                    >
-                      Set Position
-                    </Button>
-                  </div>
-                </Form.Group>
+                {error && <Alert variant="danger">{error}</Alert>}
+                {success && <Alert variant="success">{success}</Alert>}
                 <Button
                   variant="danger"
-                  className="mt-2 mb-2"
+                  className="mt-2 mb-2 me-2"
                   onClick={resetFormatting}
                   type="button"
                 >
                   Reset Formatting
                 </Button>
-                <Form.Group className="mb-2">
-                  <Form.Label>Certificate Template (Image/PDF)</Form.Label>
-                  <Form.Control
-  type="file"
-  accept="image/*,application/pdf"
-  onChange={handleTemplateChange}
-/>
-                </Form.Group>
-                {error && <Alert variant="danger">{error}</Alert>}
-                {success && <Alert variant="success">{success}</Alert>}
                 <Button type="submit" variant="primary" disabled={loading}>
                   {loading ? "Uploading..." : "Upload & Save"}
                 </Button>

@@ -42,22 +42,43 @@ const courseSchema = new mongoose.Schema({
     },
   ],
   certificate: {
-    templateUrl: String,
-    templateStoragePath: String,
-    textSettings: {
-      namePosition: { x: Number, y: Number },
-      coursePosition: { x: Number, y: Number },
-      datePosition: { x: Number, y: Number },
-      qrPosition: { x: Number, y: Number },
-      font: {
-        family: { type: String, default: "Arial" },
-        color: { type: String, default: "#000000" },
-        nameSize: { type: Number, default: 32 },
-        courseSize: { type: Number, default: 32 },
-        dateSize: { type: Number, default: 32 },
-        qrSize: { type: Number, default: 80 },
-      },
+    templateBase64: { type: String },
+  templateUrl: { type: String }, // Cloudinary URL
+  templateStoragePath: { type: String }, // Cloudinary public_id
+  textSettings: {
+    nameBox: {
+      x: { type: Number }, // percent (0-100)
+      y: { type: Number },
+      width: { type: Number },
+      height: { type: Number }
     },
+    courseBox: {
+      x: { type: Number },
+      y: { type: Number },
+      width: { type: Number },
+      height: { type: Number }
+    },
+    dateBox: {
+      x: { type: Number },
+      y: { type: Number },
+      width: { type: Number },
+      height: { type: Number }
+    },
+    qrBox: {
+      x: { type: Number },
+      y: { type: Number },
+      width: { type: Number },
+      height: { type: Number }
+    },
+    font: {
+      family: { type: String, default: "Arial" },
+      color: { type: String, default: "#000000" },
+      nameSize: { type: Number, default: 32 },
+      courseSize: { type: Number, default: 32 },
+      dateSize: { type: Number, default: 32 },
+      qrSize: { type: Number, default: 80 }
+    }
+  }
   },
   ratings: [
     {

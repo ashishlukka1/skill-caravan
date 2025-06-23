@@ -7,7 +7,7 @@ const initialState = {
   name: "",
   email: "",
   password: "",
-  role: "Employee", // Changed from "student" to "Employee"
+  role: "Employee", 
   employeeId: "",
   mobile: "",
   team: "",
@@ -63,11 +63,11 @@ const Register = () => {
   return (
     <div className="user-registration-outer">
       <div className="user-registration-image">
-        <img
-          src="https://i.postimg.cc/pLqc3f8f/7b6a4d2a-60e6-4bf0-9f2b-29d9a45fc992.jpg"
-          alt="Registration Visual"
-          className="img-cover"
-        />
+          <img
+            src="https://i.postimg.cc/W3bLxbyZ/20250623-0717-Online-Learning-Scene-remix-01jyd7dfgpfs6arhebc3qng72p.png"
+            alt="Registration Visual"
+            className="img-cover"
+          />
       </div>
       <div className="form-side">
         <form className="user-registration-form" onSubmit={handleSubmit}>

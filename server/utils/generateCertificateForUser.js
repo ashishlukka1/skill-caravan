@@ -4,12 +4,10 @@ const UniversalCertificate = require("../models/UniversalCertificate");
 const uploadToCloudinary = require("./uploadToCloudinary");
 const { v4: uuidv4 } = require("uuid");
 
-/**
- * Generates a personalized certificate for a user and course.
- * Uses course.certificate.templateUrl (Cloudinary) if present,
- * otherwise falls back to universal certificate.
- * Uploads the generated certificate to Cloudinary and returns its URL and public_id.
- */
+function percentToPixel(percent, total) {
+  return (percent / 100) * total;
+}
+
 async function generateCertificateForUser({ user, course }) {
   let certId = uuidv4().slice(0, 8).toUpperCase();
   let certUrl = null;
@@ -40,50 +38,64 @@ async function generateCertificateForUser({ user, course }) {
   const ctx = canvas.getContext("2d");
   ctx.drawImage(image, 0, 0, image.width, image.height);
 
-  // Draw user name
+  // Helper to draw centered text in a box (font size relative to image height)
+  // The frontend assumes a 600px canvas height for font sizes
+  function drawCenteredText(text, box, fontFamily, color, baseFontSizePx, weight = "bold") {
+    const x = percentToPixel(box.x + box.width / 2, image.width);
+    const y = percentToPixel(box.y + box.height / 2, image.height);
+    // Scale font size based on image height (frontend assumes 600px)
+    const fontSize = Math.max((baseFontSizePx / 600) * image.height, 10);
+    ctx.font = `${weight} ${fontSize}px "${fontFamily}"`;
+    ctx.fillStyle = color;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, x, y);
+  }
+
   const font = textSettings.font || {};
-  ctx.font = `bold ${font.nameSize || 32}px "${font.family || "Arial"}"`;
-  ctx.fillStyle = font.color || "#000000";
-  ctx.textAlign = "left";
-  ctx.fillText(
-    user.name,
-    textSettings.namePosition.x,
-    textSettings.namePosition.y + (font.nameSize || 32)
-  );
+
+  // Draw user name
+  if (textSettings.nameBox) {
+    drawCenteredText(
+      user.name,
+      textSettings.nameBox,
+      font.family || "Arial",
+      font.color || "#000000",
+      font.nameSize || 32 // Use the same as frontend
+    );
+  }
 
   // Draw course name
-  if (textSettings.coursePosition) {
-    ctx.font = `bold ${font.courseSize || 28}px "${font.family || "Arial"}"`;
-    ctx.fillText(
+  if (textSettings.courseBox) {
+    drawCenteredText(
       course.title,
-      textSettings.coursePosition.x,
-      textSettings.coursePosition.y + (font.courseSize || 28)
+      textSettings.courseBox,
+      font.family || "Arial",
+      font.color || "#000000",
+      font.courseSize || 32
     );
   }
 
   // Draw awarded date
-  if (textSettings.datePosition) {
-    ctx.font = `bold ${font.dateSize || 20}px "${font.family || "Arial"}"`;
-    ctx.fillText(
+  if (textSettings.dateBox) {
+    drawCenteredText(
       awardedAt.toLocaleDateString(),
-      textSettings.datePosition.x,
-      textSettings.datePosition.y + (font.dateSize || 20)
+      textSettings.dateBox,
+      font.family || "Arial",
+      font.color || "#000000",
+      font.dateSize || 32
     );
   }
 
-  // Draw QR code (validate URL)
-  if (textSettings.qrPosition) {
-    const qrUrl = `${process.env.PUBLIC_URL || "https://localhost:5173.com"}/validate-certificate/${certId}`;
-    const qrSize = font.qrSize || 80;
+  // Draw QR code (centered in box)
+  if (textSettings.qrBox) {
+    const qrUrl = `${process.env.PUBLIC_URL || "https://localhost:5173"}/validate-certificate/${certId}`;
+    const qrSize = percentToPixel(textSettings.qrBox.width, image.width);
     const qrBuffer = await QRCode.toBuffer(qrUrl, { width: qrSize, margin: 0 });
     const qrImage = await loadImage(qrBuffer);
-    ctx.drawImage(
-      qrImage,
-      textSettings.qrPosition.x,
-      textSettings.qrPosition.y,
-      qrSize,
-      qrSize
-    );
+    const qrX = percentToPixel(textSettings.qrBox.x + textSettings.qrBox.width / 2, image.width) - qrSize / 2;
+    const qrY = percentToPixel(textSettings.qrBox.y + textSettings.qrBox.height / 2, image.height) - qrSize / 2;
+    ctx.drawImage(qrImage, qrX, qrY, qrSize, qrSize);
   }
 
   // Upload to Cloudinary
@@ -101,8 +113,8 @@ async function generateCertificateForUser({ user, course }) {
     issued: true,
     issuedAt: awardedAt,
     certificateId: certId,
-    certificateUrl: certUrl,   // Cloudinary URL
-    storageUrl: storageUrl     // Cloudinary public_id
+    certificateUrl: certUrl,
+    storageUrl: storageUrl,
   };
 }
 
