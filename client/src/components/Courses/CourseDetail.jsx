@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Container, Row, Col, Badge, Spinner, Alert, Button, ProgressBar, Card, Accordion, Modal } from "react-bootstrap";
-import { FaLock, FaCheckCircle, FaChevronRight, FaPlay, FaFile, FaCertificate } from "react-icons/fa";
+import { FaLock, FaCheckCircle, FaChevronRight, FaPlay, FaFile } from "react-icons/fa";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "../../utils/axios";
 import { AuthContext } from "../../context/AuthContext";
@@ -79,8 +79,6 @@ const CourseDetail = () => {
   const [enrolling, setEnrolling] = useState(false);
   const [selectedResource, setSelectedResource] = useState(null);
   const [showResourceModal, setShowResourceModal] = useState(false);
-
-  // --- Certificate Notification State ---
   const [showCertAlert, setShowCertAlert] = useState(false);
 
   const { id } = useParams();
@@ -106,9 +104,10 @@ const CourseDetail = () => {
               console.error("Error fetching progress:", progressErr);
             }
           }
+        } else {
+          setIsEnrolled(false);
         }
       } catch (err) {
-        console.error("Error loading course:", err);
         setError("Failed to load course details");
       } finally {
         setLoading(false);
@@ -116,6 +115,7 @@ const CourseDetail = () => {
     };
 
     fetchData();
+    // eslint-disable-next-line
   }, [id, user]);
 
   // --- Certificate Notification Logic ---
@@ -134,30 +134,28 @@ const CourseDetail = () => {
   }, [progress, certificate]);
 
   const handleEnroll = async () => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
+  if (!user) {
+    navigate('/login');
+    return;
+  }
 
-    setEnrolling(true);
-    try {
-      const enrollRes = await axios.post(`/api/courses/${id}/enroll`);
-      if (enrollRes.data.enrollment) {
-        setProgress(enrollRes.data.enrollment);
-        setIsEnrolled(true);
-        setCourse(prev => ({
-          ...prev,
-          studentsEnrolled: [...prev.studentsEnrolled, user._id]
-        }));
-      }
-    } catch (err) {
-      console.error("Enrollment error:", err);
-      const errorMessage = err.response?.data?.message || "Failed to enroll in course";
-      setError(errorMessage);
-    } finally {
-      setEnrolling(false);
+  setEnrolling(true);
+  try {
+    const enrollRes = await axios.post(`/api/courses/${id}/enroll`);
+    if (enrollRes.data.enrollment) {
+      setProgress(enrollRes.data.enrollment);
+      setIsEnrolled(true);
+      // Re-fetch the course to get units and all content
+      const courseRes = await axios.get(`/api/courses/${id}`);
+      setCourse(courseRes.data);
     }
-  };
+  } catch (err) {
+    const errorMessage = err.response?.data?.message || "Failed to enroll in course";
+    setError(errorMessage);
+  } finally {
+    setEnrolling(false);
+  }
+};
 
   const [markingLesson, setMarkingLesson] = useState({}); // { "unitIdx-lessonIdx": true }
 
@@ -173,7 +171,6 @@ const CourseDetail = () => {
       const progressRes = await axios.get(`/api/progress/${id}`);
       setProgress(progressRes.data);
     } catch (err) {
-      console.error("Error completing lesson:", err);
       setError("Failed to update lesson progress");
     } finally {
       setMarkingLesson(prev => ({ ...prev, [`${unitIdx}-${lessonIdx}`]: false }));
@@ -195,7 +192,6 @@ const CourseDetail = () => {
       );
       setProgress(response.data);
     } catch (err) {
-      console.error("Error completing resource:", err);
       setError("Failed to update resource progress");
     }
   };
@@ -219,7 +215,6 @@ const CourseDetail = () => {
       );
       setProgress(response.data);
     } catch (err) {
-      console.error("Error assigning set:", err);
       setError("Failed to assign assignment set");
     }
   };
@@ -390,27 +385,36 @@ const CourseDetail = () => {
     );
   }
 
-  const unit = course.units[selectedUnit];
+  // Only allow enrolled users to see content
+  if (!isEnrolled) {
+    return (
+      <Container className="mt-4 mb-4 min-vh-100 d-flex justify-content-center align-items-center">
+        <Card className="course-preview-card p-2">
+          <Card.Body className="text-center">
+            <FaLock className="preview-lock-icon mb-3" size={40} />
+            <h3>Course Content Locked</h3>
+            <p className="text-muted">
+              Enroll in this course to access all lessons and assignments.
+            </p>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleEnroll}
+              disabled={enrolling}
+            >
+              {enrolling ? 'Enrolling...' : 'Enroll Now'}
+            </Button>
+          </Card.Body>
+        </Card>
+      </Container>
+    );
+  }
+
+  // Defensive: check units array
+  const hasUnits = Array.isArray(course?.units) && course.units.length > 0;
+  const unit = hasUnits ? course.units[selectedUnit] : null;
   const unitProgress = progress?.unitsProgress?.[selectedUnit];
   const isUnitUnlocked = selectedUnit === 0 || progress?.unitsProgress?.[selectedUnit - 1]?.completed;
-
-  // Helper to check if a URL is a YouTube link
-  const isYouTubeUrl = (url) =>
-    url.includes("youtube.com") || url.includes("youtu.be");
-
-  // Helper to get YouTube embed URL
-  const getYouTubeEmbedUrl = (url) => {
-    if (url.includes("youtube.com")) {
-      const urlObj = new URL(url);
-      const videoId = urlObj.searchParams.get("v");
-      return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
-    }
-    if (url.includes("youtu.be")) {
-      const videoId = url.split("/").pop();
-      return `https://www.youtube.com/embed/${videoId}`;
-    }
-    return url;
-  };
 
   return (
     <div className="course-detail-page min-vh-100">
@@ -423,7 +427,6 @@ const CourseDetail = () => {
             dismissible
             className="text-center"
           >
-            {/* <FaCertificate className="me-2" /> */}
             Congratulations! Your certificate has been issued.
             <br />
             <a
@@ -451,26 +454,13 @@ const CourseDetail = () => {
                   <i className="far fa-clock"></i> {course.duration} minutes
                 </span>
               </div>
-              {isEnrolled ? (
-                <div className="mt-3">
-                  <ProgressBar 
-                    now={progress?.progress || 0} 
-                    label={`${progress?.progress || 0}% Complete`}
-                    variant="info"
-                  />
-                </div>
-              ) : (
-                <div className="mt-3">
-                  <Button
-                    variant="primary"
-                    size="md"
-                    onClick={handleEnroll}
-                    disabled={enrolling}
-                  >
-                    {enrolling ? 'Enrolling...' : 'Enroll Now'}
-                  </Button>
-                </div>
-              )}
+              <div className="mt-3">
+                <ProgressBar 
+                  now={progress?.progress || 0} 
+                  label={`${progress?.progress || 0}% Complete`}
+                  variant="info"
+                />
+              </div>
             </Col>
             <Col md={4} className="text-end">
               {course.thumbnail && (
@@ -485,27 +475,7 @@ const CourseDetail = () => {
         </Container>
       </div>
 
-      {!isEnrolled ? (
-        <Container className="mt-4 mb-4">
-          <Card className="course-preview-card">
-            <Card.Body className="text-center">
-              <FaLock className="preview-lock-icon mb-3" size={40} />
-              <h3>Course Content Locked</h3>
-              <p className="text-muted">
-                Enroll in this course to access all lessons and assignments.
-              </p>
-              <Button
-                variant="primary"
-                size="md"
-                onClick={handleEnroll}
-                disabled={enrolling}
-              >
-                {enrolling ? 'Enrolling...' : 'Enroll Now'}
-              </Button>
-            </Card.Body>
-          </Card>
-        </Container>
-      ) : (
+      {hasUnits && unit ? (
         <Container className="mt-4">
           <Row>
             <Col md={4} lg={3}>
@@ -600,7 +570,7 @@ const CourseDetail = () => {
                             {/* Video URL Section */}
                             {lesson.videoUrl && (
                               <div className="lesson-video mb-3">
-                                {isYouTubeUrl(lesson.videoUrl) ? (
+                                {lesson.videoUrl.includes("youtube.com") || lesson.videoUrl.includes("youtu.be") ? (
                                   <div className="ratio ratio-16x9 mb-2">
                                     <iframe
                                       src={getYouTubeEmbedUrl(lesson.videoUrl)}
@@ -647,13 +617,15 @@ const CourseDetail = () => {
             </Col>
           </Row>
         </Container>
+      ) : (
+        <Container className="mt-4">
+          <Alert variant="info">No units available for this course.</Alert>
+        </Container>
       )}
 
       {/* --- Certificate Link at Bottom --- */}
       {certificate && (
         <Container className="my-5 text-center">
-          {/* <hr /> */}
-
           <a
             href={certificate.certificateUrl}
             target="_blank"

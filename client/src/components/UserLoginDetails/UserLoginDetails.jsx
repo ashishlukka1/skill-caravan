@@ -1,13 +1,13 @@
 import { useState } from "react";
 import axios from "../../utils/axios";
 import "./UserLoginDetails.css";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const initialState = {
   name: "",
   email: "",
   password: "",
-  role: "Employee", 
+  role: "Employee",
   employeeId: "",
   mobile: "",
   team: "",
@@ -28,20 +28,17 @@ const Register = () => {
     e.preventDefault();
     setMessage("");
 
-    // Frontend validation for required fields
     if (!form.name || !form.email || !form.password || !form.role || !form.employeeId) {
       setMessage("Name, Email, Password, Role, and Employee ID are required.");
       return;
     }
 
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(form.email)) {
       setMessage("Please enter a valid email address.");
       return;
     }
 
-    // Password validation
     if (form.password.length < 6) {
       setMessage("Password must be at least 6 characters long.");
       return;
@@ -61,23 +58,16 @@ const Register = () => {
   };
 
   return (
-    <div className="user-registration-outer">
-      <div className="user-registration-image">
-          <img
-            src="https://i.postimg.cc/W3bLxbyZ/20250623-0717-Online-Learning-Scene-remix-01jyd7dfgpfs6arhebc3qng72p.png"
-            alt="Registration Visual"
-            className="img-cover"
-          />
+    <div className="user-registration-flex">
+      <div className="user-registration-logo-side">
+        <img
+          src="https://storage.googleapis.com/skcn-prod-mb-public-tenants/logo/0b250aa2-3030-4772-98e7-a0c5938a771c.png"
+          alt="Logo"
+          className="logo-img"
+        />
       </div>
-      <div className="form-side">
+      <div className="user-registration-form-side">
         <form className="user-registration-form" onSubmit={handleSubmit}>
-          <div className="text-center mb-3">
-            <img
-              src="https://storage.googleapis.com/skcn-prod-mb-public-tenants/logo/0b250aa2-3030-4772-98e7-a0c5938a771c.png"
-              alt="Logo"
-              style={{ height: "78px", marginBottom: "8px" }}
-            />
-          </div>
           <h4 className="text-center mb-4">Register User</h4>
           <div className="mb-3">
             <input
@@ -129,12 +119,12 @@ const Register = () => {
             </select>
           </div>
           <div className="mb-3">
-            <input 
-              className="form-control" 
-              name="employeeId" 
-              placeholder="Employee ID" 
-              value={form.employeeId} 
-              onChange={handleChange} 
+            <input
+              className="form-control"
+              name="employeeId"
+              placeholder="Employee ID"
+              value={form.employeeId}
+              onChange={handleChange}
               required
             />
           </div>
@@ -156,7 +146,15 @@ const Register = () => {
           <div className="mb-3">
             <input className="form-control" name="designation" placeholder="Designation" value={form.designation} onChange={handleChange} />
           </div>
-          <button className="btn btn-primary w-100 p-3" type="submit">Register</button>
+          <div className="mb-3 text-end register-prompt">
+            <span className="register-prompt">
+              Already Have an Account?{" "}
+              <Link to="/login" className="register-link">
+                Login  
+              </Link>
+            </span>
+          </div>
+          <button className="btn btn-primary w-100 register-button" type="submit">Register</button>
           {message && <div className="alert alert-info mt-3">{message}</div>}
         </form>
       </div>

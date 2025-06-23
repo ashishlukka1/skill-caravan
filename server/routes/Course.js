@@ -23,6 +23,7 @@ const upload = multer({
   },
 });
 
+// --- UNIVERSAL CERTIFICATE GET ---
 router.get("/universal", async (req, res) => {
   try {
     const cert = await UniversalCertificate.findOne();
@@ -247,109 +248,114 @@ router.get("/:id/enrollment-status", authMiddleware, async (req, res) => {
 
 // --- ENROLL IN COURSE (TRANSACTION SAFE) ---
 router.post("/:id/enroll", authMiddleware, async (req, res) => {
-  let session;
+  const session = await mongoose.startSession();
   try {
-    session = await mongoose.startSession();
-    session.startTransaction();
+    let enrollmentResult = null;
+    await session.withTransaction(async () => {
+      const [course, user] = await Promise.all([
+        Course.findById(req.params.id).session(session),
+        User.findById(req.user._id).session(session),
+      ]);
 
-    const [course, user] = await Promise.all([
-      Course.findById(req.params.id).session(session),
-      User.findById(req.user._id).session(session),
-    ]);
+      if (!course) throw new Error("Course not found");
+      if (!user) throw new Error("User not found");
 
-    if (!course) {
-      await session.abortTransaction();
-      return res.status(404).json({ message: "Course not found" });
-    }
+      if (
+        user.enrolledCourses.some(
+          (e) => e.course.toString() === course._id.toString()
+        )
+      ) {
+        throw new Error("Already enrolled in this course");
+      }
 
-    if (
-      user.enrolledCourses.some(
-        (e) => e.course.toString() === course._id.toString()
-      )
-    ) {
-      await session.abortTransaction();
-      return res.status(400).json({ message: "Already enrolled in this course" });
-    }
-
-    // Robust unitsProgress initialization
-    const enrollment = {
-      course: course._id,
-      enrolledAt: new Date(),
-      status: "active",
-      progress: 0,
-      unitsProgress: (course.units || []).map((unit, unitIndex) => ({
-        unitIndex,
-        completed: false,
-        lessonsCompleted: (unit.lessons || []).map((_, lessonIndex) => ({
-          lessonIndex,
+      const enrollment = {
+        course: course._id,
+        enrolledAt: new Date(),
+        status: "active",
+        progress: 0,
+        unitsProgress: (course.units || []).map((unit, unitIndex) => ({
+          unitIndex,
           completed: false,
-          resourcesProgress: [],
+          lessonsCompleted: (unit.lessons || []).map((_, lessonIndex) => ({
+            lessonIndex,
+            completed: false,
+            resourcesProgress: [],
+            lastAccessed: new Date(),
+          })),
+          assignment:
+            unit.assignment?.assignmentSets?.length > 0
+              ? {
+                  assignedSetNumber: null,
+                  status: "not_started",
+                  submission: [],
+                  score: 0,
+                  attemptCount: 0,
+                  questionsProgress: [],
+                  lastAccessed: new Date(),
+                }
+              : null,
           lastAccessed: new Date(),
         })),
-        assignment:
-          unit.assignment?.assignmentSets?.length > 0
-            ? {
-                assignedSetNumber: null,
-                status: "not_started",
-                submission: [],
-                score: 0,
-                attemptCount: 0,
-                questionsProgress: [],
-                lastAccessed: new Date(),
-              }
-            : null,
-        lastAccessed: new Date(),
-      })),
-    };
+      };
 
-    user.enrolledCourses.push(enrollment);
+      user.enrolledCourses.push(enrollment);
 
-    if (
-      !course.studentsEnrolled.some(
-        (id) => id.toString() === user._id.toString()
-      )
-    ) {
-      course.studentsEnrolled.push(user._id);
-    }
+      if (
+        !course.studentsEnrolled.some(
+          (id) => id.toString() === user._id.toString()
+        )
+      ) {
+        course.studentsEnrolled.push(user._id);
+      }
 
-    await Promise.all([user.save({ session }), course.save({ session })]);
-    await session.commitTransaction();
+      await Promise.all([user.save({ session }), course.save({ session })]);
+      enrollmentResult = enrollment;
+    });
+
     res.status(201).json({
       message: "Successfully enrolled in course",
-      enrollment,
+      enrollment: enrollmentResult,
     });
   } catch (err) {
-    if (session) {
-      try {
-        await session.abortTransaction();
-      } catch (e) {}
-    }
-    console.error("Enrollment error:", err);
-    res
-      .status(
-        err.message === "Course not found"
-          ? 404
-          : err.message === "Already enrolled in this course"
-          ? 400
-          : 500
-      )
-      .json({
-        message: err.message || "Error enrolling in course",
-      });
+    let status = 500;
+    if (err.message === "Course not found" || err.message === "User not found") status = 404;
+    if (err.message === "Already enrolled in this course") status = 400;
+    res.status(status).json({ message: err.message || "Error enrolling in course" });
   } finally {
-    if (session) {
-      await session.endSession();
-    }
+    session.endSession();
   }
 });
+
 // --- GET COURSE BY ID ---
-router.get("/:id", async (req, res) => {
+router.get("/:id", authMiddleware, async (req, res) => {
   try {
     const course = await Course.findById(req.params.id).populate(
       "instructor",
       "name email"
     );
     if (!course) return res.status(404).json({ message: "Course not found" });
+
+    // Only allow enrolled users to access full content
+    const user = await User.findById(req.user._id);
+    const isEnrolled = user.enrolledCourses.some(
+      (enrollment) => enrollment.course.toString() === req.params.id
+    );
+    if (!isEnrolled) {
+      // Return only public info
+      return res.json({
+        _id: course._id,
+        title: course.title,
+        description: course.description,
+        category: course.category,
+        difficulty: course.difficulty,
+        thumbnail: course.thumbnail,
+        studentsEnrolled: course.studentsEnrolled,
+        instructor: course.instructor,
+        duration: course.duration,
+        // Do NOT include units/lessons!
+      });
+    }
+
     res.json(course);
   } catch (err) {
     res.status(500).json({ message: "Error fetching course" });
@@ -862,9 +868,6 @@ router.post("/universal", upload.single("template"), async (req, res) => {
   }
 });
 
-// --- GET UNIVERSAL CERTIFICATE ---
-
-
 // --- VALIDATE CERTIFICATE ---
 router.get("/validate-certificate/:certId", async (req, res) => {
   const users = await User.find({
@@ -876,7 +879,7 @@ router.get("/validate-certificate/:certId", async (req, res) => {
   const enrollment = user.enrolledCourses.find(
     (e) => e.certificate?.certificateId === req.params.certId
   );
-  res.json({
+ res.json({
     valid: true,
     userName: user.name,
     courseTitle: enrollment?.course?.title || "Course",
@@ -886,4 +889,4 @@ router.get("/validate-certificate/:certId", async (req, res) => {
   });
 });
 
-module.exports = router;  
+module.exports = router;

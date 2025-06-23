@@ -457,6 +457,9 @@
     grid-template-columns: 1fr;
     gap: 1rem;
   }
+  .dashboard-content {
+    padding: 1.5rem 0;
+  }
   
   .banner-slider {
     height: 250px;
@@ -465,10 +468,7 @@
   .banner-slider img {
     height: 250px;
   }
-  
-  .dashboard-content {
-    padding: 1.5rem 0;
-  }
+
   
   .stat-card .card-body {
     padding: 1rem;

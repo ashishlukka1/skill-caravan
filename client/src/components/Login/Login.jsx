@@ -45,25 +45,18 @@ const Login = () => {
   };
 
   return (
-    <div className="user-registration-outer">
-      <div className="user-registration-image">
+    <div className="user-registration-flex">
+      <div className="user-registration-logo-side">
         <img
-          src="https://i.postimg.cc/W3bLxbyZ/20250623-0717-Online-Learning-Scene-remix-01jyd7dfgpfs6arhebc3qng72p.png"
-          alt="Registration Visual"
-          className="img-cover"
+          src="https://storage.googleapis.com/skcn-prod-mb-public-tenants/logo/0b250aa2-3030-4772-98e7-a0c5938a771c.png"
+          alt="Logo"
+          className="logo-img"
         />
       </div>
-      <div className="form-side">
+      <div className="user-registration-form-side">
         <form className="user-registration-form" onSubmit={handleLogin}>
-          <div className="text-center mb-3">
-            <img
-              src="https://storage.googleapis.com/skcn-prod-mb-public-tenants/logo/0b250aa2-3030-4772-98e7-a0c5938a771c.png"
-              alt="Logo"
-              style={{ height: "78px", marginBottom: "8px" }}
-            />
-          </div>
           <h4 className="text-center mb-2">Welcome Back</h4>
-          <p className="text-center mb-4" style={{ color: "#888" }}>
+          <p className="text-center mb-4 register-prompt" style={{ color: "#888", marginBottom: "1.5rem" }}>
             Sign in to continue
           </p>
           <div className="mb-3">
@@ -107,8 +100,8 @@ const Login = () => {
               </Link>
             </span>
           </div>
-          <button className="btn btn-primary w-100 p-3" type="submit">
-            Continue
+          <button className="btn btn-primary w-100 login-button" type="submit">
+            Login
           </button>
           {message && <div className="alert alert-info mt-3">{message}</div>}
         </form>
