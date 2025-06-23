@@ -94,7 +94,7 @@ function Profile() {
 
   if (loading) {
     return (
-      <Container className="profile-container">
+      <Container className="profile-container min-vh-100">
         <div className="text-center py-5">
           <Spinner animation="border" variant="primary" />
           <p className="mt-2">Loading profile...</p>
@@ -116,7 +116,7 @@ function Profile() {
   }
 
   return (
-    <Container className="profile-container mt-5 pt-3">
+    <Container className="profile-container mt-5 pt-3 min-vh-100">
       <Row className="justify-content-center">
         <Col md={10} lg={9}>
           <div className="profile-card p-4">
