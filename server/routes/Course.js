@@ -338,7 +338,7 @@ router.post("/:id/enroll", authMiddleware, async (req, res) => {
       });
   } finally {
     if (session) {
-      session.endSession();
+      await session.endSession();
     }
   }
 });
