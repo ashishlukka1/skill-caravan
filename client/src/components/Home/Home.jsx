@@ -14,7 +14,7 @@ import './Home.css';
 const defaultThumbnail = 'https://i.postimg.cc/2yM5Xc24/20250613-1228-MERN-Stack-Mastery-simple-compose-01jxm18cdtfv4t59p18zc5pahx.png';
 
 const bannerImages = [
-  'https://storage.googleapis.com/skcn-prod-mb-public-tenants/banner_image/a09c6580-3f6f-4f9a-80cc-414b8334828f/29e252a2-00fb-4105-9aa6-2ac2549204ec.png',
+  'https://u.cubeupload.com/ashishl/bannerforaco17506730.png',
   'https://storage.googleapis.com/skcn-prod-mb-public-tenants/banner_image/a09c6580-3f6f-4f9a-80cc-414b8334828f/e7c2f5a6-27e0-4892-b88d-52305c154a9a.png',
   'https://storage.googleapis.com/skcn-prod-mb-public-tenants/banner_image/a09c6580-3f6f-4f9a-80cc-414b8334828f/8437f417-f7f4-4781-91ea-7172455614b8.png',
   'https://storage.googleapis.com/skcn-prod-mb-public-tenants/banner_image/a09c6580-3f6f-4f9a-80cc-414b8334828f/87272a6e-9da6-4965-985e-f9d278c5229a.png'
@@ -159,7 +159,7 @@ const HorizontalCourseSlider = ({ courses, title, tabData, onNavigate }) => {
               onClick={() => setActiveTab('completed')}
             >
               Completed 
-              <Badge className="horizontal-tab-badge">{tabData.completedCourses}</Badge>
+              <Badge className="horizontal-tab-badge">{tabData.completedCourses}</Badge>  
             </button>
           </div>
         </div>
@@ -327,7 +327,7 @@ const Home = () => {
               {/* My Learning Section */}
               <HorizontalCourseSlider
                 courses={enrollments}
-                title="My Learning"
+                title="My Learnings"
                 tabData={stats}
                 onNavigate={handleNavigate}
               />

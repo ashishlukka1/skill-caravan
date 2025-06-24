@@ -12,11 +12,12 @@ const Footer = () => {
         <Row className="align-items-center">
           <Col md={4} className="footer-left">
             <div className="powered-by">
-              <img 
+              
+              <a href="https://olivecrypto.com/" target='_blank'><img 
                 src="https://storage.googleapis.com/skcn-prod-mb-public-tenants/logo/0b250aa2-3030-4772-98e7-a0c5938a771c.png" 
                 alt="Skills Caravan Logo" 
                 className="footer-logo"
-              />
+              /></a>
             </div>
           </Col>
           <Col md={4} className="footer-center">

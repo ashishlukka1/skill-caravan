@@ -6,5 +6,91 @@
     font-family: "Inter", sans-serif;
 }
 
+/* Simple Top-Right Alert CSS */
+.alert {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  min-width: 300px;
+  max-width: 400px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-family: system-ui, -apple-system, sans-serif;
+  z-index: 1000;
+  transform: translateX(100%);
+  opacity: 0;
+  transition: all 0.3s ease-out;
+}
 
+.alert.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.alert-content {
+  padding: 16px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #333;
+  padding-right: 40px;
+}
+
+.alert-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  font-size: 18px;
+  line-height: 1;
+  color: #999;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.alert-close:hover {
+  background: #f0f0f0;
+  color: #666;
+}
+
+/* Alert types */
+.alert.success {
+  border-left: 4px solid #4caf50;
+  background: #f8fff8;
+}
+
+.alert.error {
+  border-left: 4px solid #f44336;
+  background: #fff8f8;
+}
+
+.alert.warning {
+  border-left: 4px solid #ff9800;
+  background: #fffaf0;
+}
+
+.alert.info {
+  border-left: 4px solid #2196f3;
+  background: #f8fcff;
+}
+
+/* Stacking multiple alerts */
+.alert:nth-child(2) {
+  top: 100px;
+}
+
+.alert:nth-child(3) {
+  top: 180px;
+}
+
+.alert:nth-child(4) {
+  top: 260px;
+}
 
