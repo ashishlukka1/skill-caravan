@@ -13,10 +13,63 @@ import {
   Container,
   Accordion,
 } from "react-bootstrap";
-import { FaPlus, FaTrash, FaFileAlt } from "react-icons/fa";
+import { Modal } from "react-bootstrap";
+import { FaPlus, FaTrash, FaFileAlt, FaFile, FaPlay } from "react-icons/fa";
 import "./EditCourseById.css";
 import "../Certificates/AddCertificate";
 import { fileToBase64 } from "../../utils/fileBase64";
+
+
+
+
+const ResourceModal = ({ resource, show, onHide }) => {
+  if (!resource) return null;
+  const isYouTubeUrl = (url) =>
+    url.includes("youtube.com") || url.includes("youtu.be");
+  const getYouTubeEmbedUrl = (url) => {
+    if (url.includes("youtube.com")) {
+      const urlObj = new URL(url);
+      const videoId = urlObj.searchParams.get("v");
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+    }
+    if (url.includes("youtu.be")) {
+      const videoId = url.split("/").pop();
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+    return url;
+  };
+  return (
+    <Modal show={show} onHide={onHide} size="md" centered>
+      <Modal.Header closeButton>
+        <Modal.Title>{resource.title}</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        {resource.type === "video_url" && (
+          <div className="ratio ratio-16x9">
+            <iframe
+              src={isYouTubeUrl(resource.url) ? getYouTubeEmbedUrl(resource.url) : resource.url}
+              title={resource.title}
+              allowFullScreen
+              style={{ border: 0, width: "100%", height: "100%" }}
+            ></iframe>
+          </div>
+        )}
+        {resource.type === "video_file" && resource.url && (
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <video
+              style={{ maxWidth: 500, width: "100%", borderRadius: 8 }}
+              controls
+            >
+              <source src={resource.url} type={resource.fileDetails?.contentType || "video/mp4"} />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        )}
+      </Modal.Body>
+    </Modal>
+  );
+};
+
 
 const ResourceForm = ({ unitIndex, lessonIndex, onSubmit, onCancel }) => {
   const [type, setType] = useState("video_url");
@@ -26,36 +79,35 @@ const ResourceForm = ({ unitIndex, lessonIndex, onSubmit, onCancel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleResourceSubmit = async () => {
-  if (
-    !title ||
-    (type === "video_url" && !url) ||
-    (type !== "video_url" && !file)
-  ) {
-    alert("Please fill all required fields.");
-    return;
-  }
-  setIsSubmitting(true);
-  try {
-    const formData = new FormData();
-    formData.append("type", type);
-    formData.append("title", title);
-    if (type === "video_url") {
-      formData.append("url", url);
-    } else {
-      formData.append("file", file); // <-- This is correct
+    if (
+      !title ||
+      (type === "video_url" && !url) ||
+      (type !== "video_url" && !file)
+    ) {
+      alert("Please fill all required fields.");
+      return;
     }
-    await onSubmit(unitIndex, lessonIndex, formData);
-    setTitle("");
-    setUrl("");
-    setFile(null);
-    setType("video_url");
-    onCancel();
-  } catch (err) {
-    alert("Failed to upload resource");
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append("type", type);
+      formData.append("title", title);
+      if (type === "video_url") {
+        formData.append("url", url);
+      } else {
+        formData.append("file", file); // <-- This is correct
+      }
+      await onSubmit(unitIndex, lessonIndex, formData);
+      setTitle("");
+      setUrl("");
+      setFile(null);
+      setType("video_url");
+    } catch (err) {
+      alert("Failed to upload resource");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="resource-form p-3 border rounded bg-light mb-3">
@@ -159,6 +211,9 @@ const EditCourseById = () => {
     lesson: null,
   });
   const [uploadingResource, setUploadingResource] = useState(false);
+  
+  const [selectedResource, setSelectedResource] = useState(null);
+const [showResourceModal, setShowResourceModal] = useState(false);
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -210,11 +265,14 @@ const EditCourseById = () => {
     setCourse((prev) => {
       const updated = { ...prev };
       // Avoid mutating state directly
-      updated.units = [...updated.units, {
-        title: "",
-        lessons: [],
-        assignment: { assignmentSets: [] },
-      }];
+      updated.units = [
+        ...updated.units,
+        {
+          title: "",
+          lessons: [],
+          assignment: { assignmentSets: [] },
+        },
+      ];
       return updated;
     });
   };
@@ -236,6 +294,49 @@ const EditCourseById = () => {
       return updated;
     });
   };
+
+  const handleResourceClick = (resource, unitIdx, lessonIdx, resourceIdx) => {
+  const isPdf =
+    resource.type === "document" &&
+    resource.url &&
+    resource.url.startsWith("data:application/pdf");
+  if (isPdf) {
+    // Convert base64 to Blob and open in new tab
+    const base64 = resource.url.split(",")[1];
+    const byteString = atob(base64);
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    const blob = new Blob([ab], { type: "application/pdf" });
+    const blobUrl = URL.createObjectURL(blob);
+    const win = window.open(blobUrl, "_blank");
+    // Set the document title after the PDF loads (may not work in all browsers)
+    if (win) {
+      win.onload = () => {
+        win.document.title = resource.title || "Document";
+      };
+    }
+    // Revoke the blob URL after a short delay to ensure the PDF loads
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+  } else if (resource.type === "document" && resource.url) {
+    // For non-PDF documents, download
+    const link = document.createElement("a");
+    link.href = resource.url;
+    link.download =
+      resource.fileDetails?.originalName || resource.title || "document";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } else if (
+    resource.type === "video_url" ||
+    resource.type === "video_file"
+  ) {
+    setSelectedResource({ ...resource, unitIdx, lessonIdx, resourceIdx });
+    setShowResourceModal(true);
+  }
+};
 
   // --- Lesson Management ---
   const handleAddLesson = (unitIndex) => {
@@ -497,7 +598,8 @@ const EditCourseById = () => {
         );
         return updated;
       });
-      setShowResourceForm({ unit: null, lesson: null });
+      // Do NOT reset showResourceForm here!
+      // setShowResourceForm({ unit: null, lesson: null }); // <-- REMOVE THIS LINE
       return response.data;
     } catch (err) {
       alert("Failed to upload resource");
@@ -678,7 +780,9 @@ const EditCourseById = () => {
                         onChange={(e) =>
                           setCourse((prev) => ({
                             ...prev,
-                            tags: e.target.value.split(",").map((t) => t.trim()),
+                            tags: e.target.value
+                              .split(",")
+                              .map((t) => t.trim()),
                           }))
                         }
                         placeholder="e.g. javascript, react, backend"
@@ -776,7 +880,11 @@ const EditCourseById = () => {
                           <Form.Control
                             value={unit.title}
                             onChange={(e) =>
-                              handleUnitChange(unitIndex, "title", e.target.value)
+                              handleUnitChange(
+                                unitIndex,
+                                "title",
+                                e.target.value
+                              )
                             }
                             required
                             placeholder="Unit Title"
@@ -852,7 +960,7 @@ const EditCourseById = () => {
                                 placeholder="Lesson Content"
                               />
                             </Form.Group>
-                            
+
                             <Form.Group className="mb-2">
                               <Form.Label>Duration (minutes)</Form.Label>
                               <Form.Control
@@ -894,52 +1002,58 @@ const EditCourseById = () => {
                               {(lesson.resources || []).length > 0 ? (
                                 <div className="resources-list">
                                   {lesson.resources.map((resource, resourceIndex) => (
-                                    <div
-                                      key={resourceIndex}
-                                      className="resource-item d-flex align-items-center mb-2"
-                                    >
-                                      <Badge
-                                        bg={
-                                          resource.type === "video_url"
-                                            ? "primary"
-                                            : "secondary"
-                                        }
-                                      >
-                                        {resource.type === "video_url"
-                                          ? "Video URL"
-                                          : resource.type === "video_file"
-                                          ? "Video File"
-                                          : "Document"}
-                                      </Badge>
-                                      <span className="resource-title ms-2">
-                                        {resource.title || ""}
-                                      </span>
-                                      <Button
-                                        variant="outline-danger"
-                                        size="sm"
-                                        className="btn-remove ms-2"
-                                        onClick={() =>
-                                          handleRemoveResource(
-                                            unitIndex,
-                                            lessonIndex,
-                                            resourceIndex
-                                          )
-                                        }
-                                      >
-                                        <FaTrash />
-                                      </Button>
-                                      {resource.url && (
-                                        <a
-                                          href={resource.url}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="ms-2"
-                                        >
-                                          <FaFileAlt />
-                                        </a>
-                                      )}
-                                    </div>
-                                  ))}
+  <div
+    key={resourceIndex}
+    className="resource-item d-flex align-items-center mb-2"
+  >
+    <Badge
+      bg={
+        resource.type === "video_url"
+          ? "primary"
+          : resource.type === "video_file"
+          ? "success"
+          : "secondary"
+      }
+    >
+      {resource.type === "video_url"
+        ? "Video URL"
+        : resource.type === "video_file"
+        ? "Video File"
+        : "Document"}
+    </Badge>
+    <span className="resource-title ms-2">
+      {resource.title || ""}
+    </span>
+    <Button
+      variant="outline-danger"
+      size="sm"
+      className="btn-remove ms-2"
+      onClick={() =>
+        handleRemoveResource(
+          unitIndex,
+          lessonIndex,
+          resourceIndex
+        )
+      }
+    >
+      <FaTrash />
+    </Button>
+    {/* Add this button for resource actions */}
+    <Button
+      key={resourceIndex}
+      variant="outline-secondary"
+      size="sm"
+      className="ms-2"
+      onClick={() =>
+        handleResourceClick(resource, unitIndex, lessonIndex, resourceIndex)
+      }
+    >
+      {(resource.type === 'video_url' || resource.type === 'video_file') && <FaPlay className="me-1" />}
+      {(resource.type === 'document' || resource.type === 'document_url') && <FaFile className="me-1" />}
+      {resource.title}
+    </Button>
+  </div>
+))}
                                 </div>
                               ) : (
                                 <div className="resources-empty">
@@ -954,7 +1068,10 @@ const EditCourseById = () => {
                                     lessonIndex={lessonIndex}
                                     onSubmit={handleResourceAdd}
                                     onCancel={() =>
-                                      setShowResourceForm({ unit: null, lesson: null })
+                                      setShowResourceForm({
+                                        unit: null,
+                                        lesson: null,
+                                      })
                                     }
                                   />
                                 )}
@@ -1008,7 +1125,10 @@ const EditCourseById = () => {
                                   <Button
                                     variant="outline-danger"
                                     onClick={() =>
-                                      handleRemoveAssignmentSet(unitIndex, setIndex)
+                                      handleRemoveAssignmentSet(
+                                        unitIndex,
+                                        setIndex
+                                      )
                                     }
                                     size="sm"
                                   >
@@ -1060,7 +1180,10 @@ const EditCourseById = () => {
                                   >
                                     <Accordion.Header>
                                       {q.questionText
-                                        ? q.questionText.slice(0, 30) + (q.questionText.length > 30 ? "..." : "")
+                                        ? q.questionText.slice(0, 30) +
+                                          (q.questionText.length > 30
+                                            ? "..."
+                                            : "")
                                         : `Question ${qIdx + 1}`}
                                     </Accordion.Header>
                                     <Accordion.Body>
@@ -1083,12 +1206,16 @@ const EditCourseById = () => {
                                       </Form.Group>
                                       <Form.Label>Options</Form.Label>
                                       {q.options.map((opt, optIdx) => (
-                                        <Form.Group className="mb-2" key={optIdx}>
+                                        <Form.Group
+                                          className="mb-2"
+                                          key={optIdx}
+                                        >
                                           <Form.Control
                                             value={opt}
                                             onChange={(e) => {
                                               const newOptions = [...q.options];
-                                              newOptions[optIdx] = e.target.value;
+                                              newOptions[optIdx] =
+                                                e.target.value;
                                               handleQuestionChange(
                                                 unitIndex,
                                                 qIdx,
@@ -1103,7 +1230,9 @@ const EditCourseById = () => {
                                         </Form.Group>
                                       ))}
                                       <Form.Group className="mb-2">
-                                        <Form.Label>Correct Answer (option number)</Form.Label>
+                                        <Form.Label>
+                                          Correct Answer (option number)
+                                        </Form.Label>
                                         <Form.Select
                                           value={q.correctAnswer}
                                           onChange={(e) =>
@@ -1147,7 +1276,11 @@ const EditCourseById = () => {
                                           variant="outline-danger"
                                           size="sm"
                                           onClick={() =>
-                                            handleRemoveQuestion(unitIndex, qIdx, setIndex)
+                                            handleRemoveQuestion(
+                                              unitIndex,
+                                              qIdx,
+                                              setIndex
+                                            )
                                           }
                                         >
                                           <FaTrash /> Remove Question
@@ -1161,7 +1294,9 @@ const EditCourseById = () => {
                                 <Button
                                   variant="outline-success"
                                   size="sm"
-                                  onClick={() => handleAddQuestion(unitIndex, setIndex)}
+                                  onClick={() =>
+                                    handleAddQuestion(unitIndex, setIndex)
+                                  }
                                 >
                                   <FaPlus className="me-1" /> Add Question
                                 </Button>
@@ -1190,7 +1325,12 @@ const EditCourseById = () => {
               </Button>
             </div>
             <div className="mt-4 text-center">
-              <Button type="submit" variant="primary" disabled={loading} size="lg">
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={loading}
+                size="lg"
+              >
                 {loading ? (
                   <>
                     <Spinner
@@ -1211,6 +1351,14 @@ const EditCourseById = () => {
           </Form>
         </Col>
       </Row>
+      <ResourceModal
+  resource={selectedResource}
+  show={showResourceModal}
+  onHide={() => {
+    setShowResourceModal(false);
+    setSelectedResource(null);
+  }}
+/>
     </Container>
   );
 };

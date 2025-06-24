@@ -15,9 +15,9 @@ const defaultThumbnail = 'https://i.postimg.cc/2yM5Xc24/20250613-1228-MERN-Stack
 
 const bannerImages = [
   'https://u.cubeupload.com/ashishl/bannerforaco17506730.png',
-  'https://storage.googleapis.com/skcn-prod-mb-public-tenants/banner_image/a09c6580-3f6f-4f9a-80cc-414b8334828f/e7c2f5a6-27e0-4892-b88d-52305c154a9a.png',
-  'https://storage.googleapis.com/skcn-prod-mb-public-tenants/banner_image/a09c6580-3f6f-4f9a-80cc-414b8334828f/8437f417-f7f4-4781-91ea-7172455614b8.png',
-  'https://storage.googleapis.com/skcn-prod-mb-public-tenants/banner_image/a09c6580-3f6f-4f9a-80cc-414b8334828f/87272a6e-9da6-4965-985e-f9d278c5229a.png'
+  'https://u.cubeupload.com/ashishl/LevelUpYourCareer4.png', 
+  'https://u.cubeupload.com/ashishl/LevelUpYourCareer3.png',
+  'https://u.cubeupload.com/ashishl/LevelUpYourCareer1.png'
 ];
 
 const statsCards = [

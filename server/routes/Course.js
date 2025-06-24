@@ -23,6 +23,11 @@ const upload = multer({
   },
 });
 
+const getBase64 = (buffer, mimetype) => {
+  return `data:${mimetype};base64,${buffer.toString('base64')}`;
+};
+
+
 // --- UNIVERSAL CERTIFICATE GET ---
 router.get("/universal", async (req, res) => {
   try {
@@ -655,21 +660,30 @@ router.post(
       if (type === "video_url" || type === "document_url") {
         if (!url) return res.status(400).json({ message: "URL is required." });
         resourceData.url = url;
-      } else if ((type === "video_file" || type === "document") && req.file) {
-        const folder = `courses/${courseId}/lessons/${lessonIndex}`;
-        const filename = `${Date.now()}-${req.file.originalname}`;
-        const result = await uploadToCloudinary(
+      } else if (type === "video_file" && req.file) {
+        // Upload video to Cloudinary
+        const uploadResult = await uploadToCloudinary(
           req.file.buffer,
-          folder,
-          filename,
+          "course-videos",
+          `${Date.now()}-${req.file.originalname}`,
           req.file.mimetype
         );
-        resourceData.url = result.secure_url;
+        resourceData.url = uploadResult.secure_url;
         resourceData.fileDetails = {
-          public_id: result.public_id,
-          resource_type: result.resource_type,
-          size: result.bytes,
-          format: result.format,
+          originalName: req.file.originalname,
+          contentType: req.file.mimetype,
+          size: req.file.size,
+          uploadDate: new Date(),
+          cloudinaryPublicId: uploadResult.public_id,
+        };
+      } else if (type === "document" && req.file) {
+        // Store document as base64 (for small files)
+        resourceData.url = getBase64(req.file.buffer, req.file.mimetype);
+        resourceData.fileDetails = {
+          originalName: req.file.originalname,
+          contentType: req.file.mimetype,
+          size: req.file.size,
+          uploadDate: new Date(),
         };
       } else {
         return res.status(400).json({ message: "File or URL is required." });

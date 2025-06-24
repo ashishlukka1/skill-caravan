@@ -1,6 +1,241 @@
-.edit-courses {
+/* Container Styles */
+.edit-courses-container {
   min-height: 90vh;
-  margin-left: 3rem;
-  min-width: 1400px;
-  /* margin-right: 3rem; */
+  margin-top: 5rem;
+  max-width: 1400px;
+}
+
+/* Search Group */
+.search-group {
+  margin-bottom: 1.5rem;
+}
+
+/* Loading Container */
+.loading-container {
+  text-align: center;
+  padding: 3rem 0;
+}
+
+/* Table Styles */
+.edit-courses-table {
+  min-width: 700px;
+  vertical-align: middle;
+}
+
+.courses-table-header {
+  background-color: var(--bs-primary);
+  color: white;
+  position: sticky;
+  top: 0;
+    text-align: center;
+  z-index: 1;
+}
+
+.courses-table-header th {
+  font-weight: 600;
+}
+
+/* Header Icon */
+.header-icon {
+  margin-right: 0.5rem;
+}
+
+/* Column Widths */
+.title-column {
+  width: 30%;
+}
+
+
+.category-column {
+  width: 15%;
+}
+
+.enrolled-column {
+  width: 15%;
+}
+
+.created-column {
+  width: 15%;
+}
+
+.actions-column {
+  width: 1%;
+  text-align: center;
+}
+.actions-cell{
+  text-align: center;
+}
+
+/* Title Cell Content */
+.title-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-left: 1rem;
+}
+
+.title-info {
+  flex-grow: 1;
+}
+
+.course-title {
+  font-weight: 600;
+}
+
+.course-thumbnail {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #eee;
+}
+
+/* Mobile Info (hidden by default) */
+.mobile-info {
+  display: none;
+  color: #6c757d;
+  margin-top: 0.25rem;
+}
+
+/* No Courses Message */
+.no-courses-message {
+  text-align: center;
+  color: #6c757d;
+  padding: 2rem;
+}
+
+/* Edit Button */
+.edit-button {
+  margin-right: 0.5rem;
+  border-radius: 14px;
+  padding: 0.2rem 0.75rem;
+}
+
+.edit-icon {
+  display: none;
+}
+
+.edit-text {
+  display: inline;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 767.98px) {
+  /* Hide columns on mobile */
+  .category-column,
+  .enrolled-column,
+  .created-column,
+  .category-cell,
+  .enrolled-cell,
+  .created-cell {
+    display: none;
+  }
+  
+  /* Show mobile info */
+  .mobile-info {
+    display: block;
+  }
+  
+  /* Hide thumbnail on very small screens */
+  .course-thumbnail {
+    display: none;
+  }
+  
+  /* Adjust button for mobile */
+  .edit-text {
+    display: inline;
+  }
+  
+  .edit-icon {
+    display: none;
+  }
+  
+  /* Adjust container padding */
+  .edit-courses-container {
+    padding: 1rem 0.5rem;
+  }
+
+  /* Prevent horizontal scrolling */
+  .table-responsive {
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  /* Reset table min-width */
+  .edit-courses-table {
+    min-width: 0;
+    width: 100%;
+  }
+
+  /* Adjust column widths */
+  .title-column {
+    width: 75%;
+  }
+
+  .actions-column {
+    width: 25%;
+  }
+}
+
+/* Small screens and up */
+@media (min-width: 576px) {
+  .course-thumbnail {
+    display: block;
+  }
+  
+  .edit-text {
+    display: inline;
+  }
+  
+  .edit-icon {
+    display: none;
+  }
+}
+
+/* Medium screens and up */
+@media (min-width: 768px) {
+  /* Show all columns on medium screens and up */
+  .category-column,
+  .enrolled-column,
+  .created-column,
+  .category-cell,
+  .enrolled-cell,
+  .created-cell {
+    display: table-cell;
+  }
+  
+  /* Hide mobile info */
+  .mobile-info {
+    display: none;
+  }
+
+  /* Reset column widths */
+  .title-column {
+    width: 30%;
+  }
+  
+  .actions-column {
+    width: 1%;
+  }
+}
+
+/* Large screens optimizations */
+@media (min-width: 992px) {
+  .edit-courses-container {
+    padding: 1rem;
+  }
+}
+
+/* Hover Effects */
+.edit-courses-table tbody tr:hover {
+  background-color: rgba(0, 123, 255, 0.1);
+}
+
+
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .edit-button:hover {
+    transform: none;
+  }
 }

@@ -506,7 +506,7 @@ const handleSubmit = async (e) => {
               })()}
               <Form onSubmit={handleSubmit}>
                 <Form.Group className="mb-2">
-                  <Form.Label>Certificate Template (Image/PDF)</Form.Label>
+                  <Form.Label>Certificate Template (Image Only)</Form.Label>
                   <Form.Control
                     type="file"
                     accept="image/*,application/pdf"

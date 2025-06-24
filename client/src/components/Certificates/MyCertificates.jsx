@@ -112,7 +112,7 @@ function MyCertificates() {
                     justifyContent: "center"
                   }}
                 >
-                 
+                
                   <img
                     ref={el => (imgRefs.current[cert.certificateId || idx] = el)}
                     src={cert.certificateUrl}
@@ -143,7 +143,7 @@ function MyCertificates() {
                   </div>
                 </div>
                 <Card.Body className="d-flex flex-column justify-content-end">
-                  <div className="d-grid gap-2">
+                  <div className="d-flex gap-2">
                     {cert.certificateUrl && (
                       <>
                         <Button
@@ -151,6 +151,7 @@ function MyCertificates() {
                           href={cert.certificateUrl}
                           target="_blank"
                           rel="noopener noreferrer"
+                          className="flex-fill"
                         >
                           View
                         </Button>
@@ -158,6 +159,7 @@ function MyCertificates() {
                         <Button
                           variant="outline-secondary"
                           onClick={() => handleDownloadPDF(cert, idx)}
+                          className="flex-fill"
                         >
                           Download PDF
                         </Button>

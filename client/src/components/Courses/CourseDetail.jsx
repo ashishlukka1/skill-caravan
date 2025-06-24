@@ -27,7 +27,9 @@ const ResourceModal = ({ resource, show, onHide, onComplete }) => {
     <Modal
       show={show}
       onHide={onHide}
-      size="lg"
+      size="md" // Change from "lg" to "md"
+      centered
+      dialogClassName="resource-video-modal"
       backdrop={isVideo ? "static" : true}
       keyboard={!isVideo ? true : false}
     >
@@ -45,13 +47,28 @@ const ResourceModal = ({ resource, show, onHide, onComplete }) => {
             ></iframe>
           </div>
         )}
-        {resource.type === 'video_file' && (
-          <video className="w-100" controls>
-            <source src={resource.url} type={resource.fileDetails?.contentType || "video/mp4"} />
-            Your browser does not support the video tag.
-          </video>
+        {resource.type === 'video_file' && resource.url && (
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <video
+              style={{ maxWidth: 500,maxHeight: 550, width: "100%", borderRadius: 8 }}
+              controls
+            >
+              <source src={resource.url} type={resource.fileDetails?.contentType || "video/mp4"} />
+              Your browser does not support the video tag.
+            </video>
+          </div>
         )}
-        {(resource.type === 'document' || resource.type === 'document_url') && (
+        {resource.type === 'document' && resource.url && !resource.url.startsWith("data:application/pdf") && (
+          <a
+            href={resource.url}
+            download={resource.fileDetails?.originalName || resource.title}
+            className="btn btn-primary"
+          >
+            <FaFile className="me-2" />
+            Download Document
+          </a>
+        )}
+        {resource.type === 'document_url' && (
           <div className="text-center">
             <a
               href={resource.url}
@@ -67,7 +84,7 @@ const ResourceModal = ({ resource, show, onHide, onComplete }) => {
       </Modal.Body>
     </Modal>
   );
-};
+};  
 
 const CourseDetail = () => {
   const [course, setCourse] = useState(null);
@@ -467,7 +484,7 @@ const CourseDetail = () => {
                 <img
                   src={course.thumbnail}
                   alt={course.title}
-                  className="course-thumbnail"
+                  className="course-thumbnail1"
                 />
               )}
             </Col>
@@ -551,20 +568,54 @@ const CourseDetail = () => {
                             {lesson.resources && lesson.resources.length > 0 && (
                               <div className="resources-section mb-3">
                                 <h6>Resources:</h6>
-                                {lesson.resources.map((resource, resourceIdx) => (
-                                  <Button
-                                    key={resourceIdx}
-                                    variant="outline-secondary"
-                                    size="sm"
-                                    className="me-2 mb-2"
-                                    onClick={() => handleResourceClick(resource, selectedUnit, idx, resourceIdx)}
-                                    disabled={!isUnitUnlocked}
-                                  >
-                                    {(resource.type === 'video_url' || resource.type === 'video_file') && <FaPlay className="me-1" />}
-                                    {(resource.type === 'document' || resource.type === 'document_url') && <FaFile className="me-1" />}
-                                    {resource.title}
-                                  </Button>
-                                ))}
+                                {lesson.resources.map((resource, resourceIdx) => {
+  const isPdf = resource.type === "document" && resource.url && resource.url.startsWith("data:application/pdf");
+  const handleResourceClick = () => {
+    if (isPdf) {
+      // Convert base64 to Blob and open in new tab
+      const byteString = atob(resource.url.split(',')[1]);
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      const blob = new Blob([ab], { type: "application/pdf" });
+      const blobUrl = URL.createObjectURL(blob);
+      const win = window.open(blobUrl, "_blank");
+      // Try to set the tab title (not all browsers support this)
+      if (win) {
+        win.document.title = resource.title || "Document";
+      }
+    } else if (resource.type === "document" && resource.url) {
+      // For non-PDF documents, download
+      const link = document.createElement("a");
+      link.href = resource.url;
+      link.download = resource.fileDetails?.originalName || resource.title || "document";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      // For video or URL, open modal or handle as before
+      setSelectedResource({ ...resource, unitIdx: selectedUnit, lessonIdx: idx, resourceIdx });
+      setShowResourceModal(true);
+    }
+  };
+
+  return (
+    <Button
+      key={resourceIdx}
+      variant="outline-secondary"
+      size="sm"
+      className="me-2 mb-2"
+      onClick={handleResourceClick}
+      disabled={!isUnitUnlocked}
+    >
+      {(resource.type === 'video_url' || resource.type === 'video_file') && <FaPlay className="me-1" />}
+      {(resource.type === 'document' || resource.type === 'document_url') && <FaFile className="me-1" />}
+      {resource.title}
+    </Button>
+  );
+})}   
                               </div>
                             )}
                             {/* Video URL Section */}

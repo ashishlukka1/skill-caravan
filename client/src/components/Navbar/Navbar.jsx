@@ -20,7 +20,6 @@ const Navbar = () => {
   const searchRef = useRef(null);
   const navigate = useNavigate();
 
-  // Debounce search with longer delay for better UX
   useEffect(() => {
     const timer = setTimeout(() => {
       if (searchQuery.trim() && searchQuery.length >= 2) {
@@ -30,23 +29,18 @@ const Navbar = () => {
         setShowResults(false);
       }
     }, 500);
-
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setShowResults(false);
       }
-      if (dropdownRef.current && 
-          !dropdownRef.current.contains(event.target) && 
-          !buttonRef.current.contains(event.target)) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target) && !buttonRef.current.contains(event.target)) {
         setShowDropdown(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
@@ -106,6 +100,31 @@ const Navbar = () => {
     return `${mins}m`;
   };
 
+  // Render navigation links for dropdown
+  const renderNavLinks = () => (
+    <>
+      <Link to="/" className="dropdown-item" onClick={() => setShowDropdown(false)}>
+        Home
+      </Link>
+      <Link to="/courses" className="dropdown-item" onClick={() => setShowDropdown(false)}>
+        Browse
+      </Link>
+      {user?.role === 'admin' && (
+        <>
+          <Link to="/add-course" className="dropdown-item" onClick={() => setShowDropdown(false)}>
+            Add Course
+          </Link>
+          <Link to="/edit-courses" className="dropdown-item" onClick={() => setShowDropdown(false)}>
+            Edit Courses
+          </Link>
+          <Link to="/universal-certificate" className="dropdown-item" onClick={() => setShowDropdown(false)}>
+            Edit Default Certificate
+          </Link>
+        </>
+      )}
+    </>
+  );
+
   return (
     <nav className="navbar">
       <div className="navbar-left">
@@ -115,21 +134,20 @@ const Navbar = () => {
             alt="Logo"
           />
         </Link>
-     
-      <div className="nav-links">
-        <Link to="/" className='mx-3'>Home</Link>
-        <Link to="/courses">Browse</Link>
-        {user?.role === 'admin' && (
-          <>
-            <Link to="/add-course" className="ms-3">Add Course</Link>
-            <Link to="/edit-courses" className="ms-3">Edit Courses</Link>
-            <Link to="/universal-certificate" className="ms-3">Edit Default Certificate</Link>
-          </>
-        )}
-      </div>
+        <div className="nav-links">
+          <Link to="/" className='mx-3'>Home</Link>
+          <Link to="/courses">Browse</Link>
+          {user?.role === 'admin' && (
+            <>
+              <Link to="/add-course" className="ms-3">Add Course</Link>
+              <Link to="/edit-courses" className="ms-3">Edit Courses</Link>
+              <Link to="/universal-certificate" className="ms-3">Edit Default Certificate</Link>
+            </>
+          )}
+        </div>
       </div>
 
-      <div className="navbar-center me-3" ref={searchRef}>
+      <div className="navbar-center" ref={searchRef}>
         <form onSubmit={handleSearchSubmit} className="search-form">
           <div className="search-bar">
             <input
@@ -156,8 +174,6 @@ const Navbar = () => {
             </button>
           </div>
         </form>
-
-        {/* Enhanced Search Results Dropdown */}
         {showResults && (
           <div className="search-results">
             {isSearching ? (
@@ -166,79 +182,76 @@ const Navbar = () => {
                 <span>Searching courses...</span>
               </div>
             ) : searchResults.length > 0 ? (
-              <>
-                
-                <div className="search-results-list">
-                  {searchResults.map(course => (
-                    <div
-                      key={course._id}
-                      className="search-result-item"
-                      onClick={() => handleSearchSelect(course._id)}
-                    >
-                      <div className="result-thumbnail">
-                        <img 
-                          src={course.thumbnail || '/default-course-thumbnail.jpg'} 
-                          alt={course.title}
-                          onError={(e) => {
-                            e.target.src = '/default-course-thumbnail.jpg';
-                          }}
-                        />
-                        {course.isPaid && course.price && (
-                          <div className="price-badge">
-                            ${course.price}
-                          </div>
-                        )}
-                      </div>
-                      <div className="result-info">
-                        <h6 className="result-title">
-                          {highlightText(course.title, searchQuery)}
-                        </h6>
-                        {course.instructor && (
-                          <div className="result-instructor">
-                            by {course.instructor.name || course.instructor}
-                          </div>
-                        )}
-                        <div className="result-meta">
-                          {course.rating && (
-                            <div className="rating">
-                              <BsStar className="star-icon" />
-                              <span>{course.rating.toFixed(1)}</span>
-                              {course.reviewCount && (
-                                <span className="review-count">({course.reviewCount})</span>
-                              )}
-                            </div>
-                          )}
-                          {course.duration && (
-                            <div className="duration">
-                              <BsClock className="clock-icon" />
-                              <span>{formatDuration(course.duration)}</span>
-                            </div>
-                          )}
-                          {course.level && (
-                            <div className="level">
-                              <span className={`level-badge level-${course.level.toLowerCase()}`}>
-                                {course.level}
-                              </span>
-                            </div>
-                          )}
+              <div className="search-results-list">
+                {searchResults.map(course => (
+                  <div
+                    key={course._id}
+                    className="search-result-item"
+                    onClick={() => handleSearchSelect(course._id)}
+                  >
+                    <div className="result-thumbnail">
+                      <img 
+                        src={course.thumbnail || '/default-course-thumbnail.jpg'} 
+                        alt={course.title}
+                        onError={(e) => {
+                          e.target.src = '/default-course-thumbnail.jpg';
+                        }}
+                      />
+                      {course.isPaid && course.price && (
+                        <div className="price-badge">
+                          ${course.price}
                         </div>
-                        {course.tags && course.tags.length > 0 && (
-                          <div className="result-tags">
-                            {course.tags.slice(0, 3).map((tag, idx) => (
-                              <span key={idx} className="tag">
-                                {highlightText(tag, searchQuery)}
-                              </span>
-                            ))}
-                            {course.tags.length > 3 && (
-                              <span className="tag-more">+{course.tags.length - 3}</span>
+                      )}
+                    </div>
+                    <div className="result-info">
+                      <h6 className="result-title">
+                        {highlightText(course.title, searchQuery)}
+                      </h6>
+                      {course.instructor && (
+                        <div className="result-instructor">
+                          by {course.instructor.name || course.instructor}
+                        </div>
+                      )}
+                      <div className="result-meta">
+                        {course.rating && (
+                          <div className="rating">
+                            <BsStar className="star-icon" />
+                            <span>{course.rating.toFixed(1)}</span>
+                            {course.reviewCount && (
+                              <span className="review-count">({course.reviewCount})</span>
                             )}
                           </div>
                         )}
+                        {course.duration && (
+                          <div className="duration">
+                            <BsClock className="clock-icon" />
+                            <span>{formatDuration(course.duration)}</span>
+                          </div>
+                        )}
+                        {course.level && (
+                          <div className="level">
+                            <span className={`level-badge level-${course.level.toLowerCase()}`}>
+                              {course.level}
+                            </span>
+                          </div>
+                        )}
                       </div>
+                      {course.tags && course.tags.length > 0 && (
+                        <div className="result-tags">
+                          {course.tags.slice(0, 3).map((tag, idx) => (
+                            <span key={idx} className="tag">
+                              {highlightText(tag, searchQuery)}
+                            </span>
+                          ))}
+                          {course.tags.length > 3 && (
+                            <span className="tag-more">+{course.tags.length - 3}</span>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
-              </>
+                  </div>
+                ))}
+              </div>
             ) : searchQuery.trim().length >= 2 ? (
               <div className="no-results">
                 <div className="no-results-icon">🔍</div>
@@ -275,20 +288,20 @@ const Navbar = () => {
               aria-haspopup="true"
               aria-expanded={showDropdown}
             >
-              <span className="profile-name">{user?.name}</span>
-              <FiChevronDown
-                size={20}
-                className={`dropdown-icon ${showDropdown ? 'rotated' : ''}`}
-              />
+              <span className="profile-initial">{user?.name.charAt(0)}</span>
+              <FiChevronDown size={20} className={`dropdown-icon ${showDropdown ? 'rotated' : ''}`} />
             </button>
             <div
               ref={dropdownRef}
               className={`dropdown-menu ${showDropdown ? 'active' : ''}`}
               style={{ display: showDropdown ? 'block' : 'none' }}
             >
-              <div className="dropdown-profile px-3 py-2">
+              <div className="dropdown-profile">
                 <div className="fw-bold">{user.name}</div>
                 <div className="text-muted" style={{ fontSize: '0.9em' }}>{user.email}</div>
+              </div>
+              <div className="mobile-nav-links">
+                {renderNavLinks()}
               </div>
               <div className="dropdown-divider" />
               <Link to="/my-courses" className="dropdown-item" onClick={() => setShowDropdown(false)}>
@@ -297,7 +310,7 @@ const Navbar = () => {
               </Link>
               <div className="dropdown-divider" />
               <Link to="/my-certificates" className="dropdown-item" onClick={() => setShowDropdown(false)}>
-                <PiCertificateLight  size={16}/>
+                <PiCertificateLight size={16}/>
                 <span>My Certificates</span>
               </Link>
               <div className="dropdown-divider" />

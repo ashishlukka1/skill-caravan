@@ -34,9 +34,8 @@ const EditCourses = () => {
   );
 
   return (
-    <Container className="py-4 edit-courses min-vh-100 mt-5">
-
-      <Form.Group className="mb-3 mt-3">
+    <Container className="edit-courses-container">
+      <Form.Group className="search-group">
         <Form.Control
           type="text"
           placeholder="Search courses..."
@@ -46,81 +45,81 @@ const EditCourses = () => {
       </Form.Group>
 
       {loading ? (
-        <div className="text-center py-5">
+        <div className="loading-container">
           <Spinner animation="border" />
         </div>
       ) : error ? (
         <Alert variant="danger">{error}</Alert>
       ) : (
         <div className="table-responsive">
-          <Table
-            bordered
-            className="edit-courses-table align-middle"
-            style={{ minWidth: 700 }}
-          >
-            <thead className="table-primary sticky-top" style={{ zIndex: 1 }}>
+          <Table bordered className="edit-courses-table">
+            <thead className="courses-table-header">
               <tr>
-                <th style={{ width: "30%" }}>
-                  <FaBookOpen className="me-2" />
+                <th className="title-column">
                   Title
                 </th>
-                <th style={{ width: "15%" }}>Category</th>
-                <th style={{ width: "15%" }}>
-                  {/* <FaUsers className="me-2" /> */}
+                <th className="category-column">
+                  Category
+                </th>
+                <th className="enrolled-column">
                   Employees Enrolled
                 </th>
-                <th style={{ width: "15%" }}>Created</th>
-                {/* <th style={{ width: "15%" }}>Instructor</th> */}
-                <th style={{ width: "15%" }}>Actions</th>
+                <th className="created-column">
+                  Created
+                </th>
+                <th className="actions-column">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredCourses.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center text-muted py-4">
+                  <td colSpan="5" className="no-courses-message">
                     No courses found.
                   </td>
                 </tr>
               ) : (
                 filteredCourses.map((course, idx) => (
                   <tr key={course._id} className={idx % 2 === 0 ? "table-light" : ""}>
-                    <td>
-                      <div className="d-flex align-items-center gap-2">
+                    <td className="title-cell">
+                      <div className="title-content">
                         {course.thumbnail && (
                           <img
                             src={course.thumbnail}
                             alt="thumb"
-                            style={{
-                              width: 36,
-                              height: 36,
-                              objectFit: "cover",
-                              borderRadius: 6,
-                              border: "1px solid #eee",
-                            }}
+                            className="course-thumbnail"
                           />
                         )}
-                        <span>{course.title}</span>
+                        <div className="title-info">
+                          <div className="course-title">{course.title}</div>
+                          <div className="mobile-info">
+                            <small>
+                              {course.category} • {course.studentsEnrolled?.length || 0} enrolled
+                              {course.createdAt && (
+                                <> • {new Date(course.createdAt).toLocaleDateString()}</>
+                              )}
+                            </small>
+                          </div>
+                        </div>
                       </div>
                     </td>
-                    <td>{course.category}</td>
-                    <td>{course.studentsEnrolled?.length || 0}</td>
-                    <td>
+                    <td className="category-cell">{course.category}</td>
+                    <td className="enrolled-cell">{course.studentsEnrolled?.length || 0}</td>
+                    <td className="created-cell">
                       {course.createdAt
                         ? new Date(course.createdAt).toLocaleDateString()
                         : "-"}
                     </td>
-                    
-                    <td>
+                    <td className="actions-cell">
                       <Button
-                        variant="outline-primary action-btn"
+                        variant="outline-primary"
                         size="sm"
-                        className="me-2"
+                        className="edit-button"
                         onClick={() => navigate(`/edit-courses/${course._id}`)}
                         title="Edit Course"
                       >
-                        Edit
+                        <span className="edit-text">Edit</span>
+                        <FaEdit className="edit-icon" />
                       </Button>
-                      {/* Add more actions here if needed */}
                     </td>
                   </tr>
                 ))
