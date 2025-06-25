@@ -347,12 +347,17 @@ router.get("/:id", authMiddleware, async (req, res) => {
     );
     if (!course) return res.status(404).json({ message: "Course not found" });
 
-    // Only allow enrolled users to access full content
     const user = await User.findById(req.user._id);
     const isEnrolled = user.enrolledCourses.some(
       (enrollment) => enrollment.course.toString() === req.params.id
     );
-    if (!isEnrolled) {
+    const isAdminOrInstructor =
+      user.role === "admin" ||
+      (course.instructor && course.instructor._id
+        ? course.instructor._id.toString() === user._id.toString()
+        : course.instructor.toString() === user._id.toString());
+
+    if (!isEnrolled && !isAdminOrInstructor) {
       // Return only public info
       return res.json({
         _id: course._id,
