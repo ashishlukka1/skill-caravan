@@ -23,7 +23,7 @@ const Login = () => {
       if (res.data.token) {
         localStorage.setItem("token", res.data.token);
         setUser(res.data.user);
-        sessionStorage.setItem("user", JSON.stringify(res.data.user)); // <-- Add this line
+        sessionStorage.setItem("user", JSON.stringify(res.data.user)); 
         navigate("/");
       }
     } catch (err) {

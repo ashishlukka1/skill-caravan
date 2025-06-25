@@ -14,7 +14,7 @@ async function generateCertificateForUser({ user, course }) {
   let storageUrl = null;
   let awardedAt = new Date();
 
-  // Prefer course-specific certificate, fallback to universal
+  // Prefer course-specific certificate, switch to universal
   let templateSrc, textSettings;
   if (
     course.certificate &&
@@ -38,12 +38,9 @@ async function generateCertificateForUser({ user, course }) {
   const ctx = canvas.getContext("2d");
   ctx.drawImage(image, 0, 0, image.width, image.height);
 
-  // Helper to draw centered text in a box (font size relative to image height)
-  // The frontend assumes a 600px canvas height for font sizes
   function drawCenteredText(text, box, fontFamily, color, baseFontSizePx, weight = "bold") {
     const x = percentToPixel(box.x + box.width / 2, image.width);
     const y = percentToPixel(box.y + box.height / 2, image.height);
-    // Scale font size based on image height (frontend assumes 600px)
     const fontSize = Math.max((baseFontSizePx / 600) * image.height, 10);
     ctx.font = `${weight} ${fontSize}px "${fontFamily}"`;
     ctx.fillStyle = color;

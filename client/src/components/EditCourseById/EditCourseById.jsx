@@ -12,9 +12,11 @@ import {
   Col,
   Container,
   Accordion,
+  Toast,
+  ToastContainer,
 } from "react-bootstrap";
 import { Modal } from "react-bootstrap";
-import { FaPlus, FaTrash, FaFileAlt, FaFile, FaPlay } from "react-icons/fa";
+import { FaPlus, FaTrash, FaFileAlt, FaFile, FaPlay, FaCheckCircle, FaTimesCircle, FaInfoCircle, FaTimes } from "react-icons/fa";
 import "./EditCourseById.css";
 import "../Certificates/AddCertificate";
 import { fileToBase64 } from "../../utils/fileBase64";
@@ -22,8 +24,10 @@ import { fileToBase64 } from "../../utils/fileBase64";
 
 
 
-const ResourceModal = ({ resource, show, onHide }) => {
+// --- Resource Modal ---
+const ResourceModal = ({ resource, show, onHide, onComplete }) => {
   if (!resource) return null;
+  const isVideo = resource.type === 'video_file' || resource.type === 'video_url';
   const isYouTubeUrl = (url) =>
     url.includes("youtube.com") || url.includes("youtu.be");
   const getYouTubeEmbedUrl = (url) => {
@@ -39,30 +43,99 @@ const ResourceModal = ({ resource, show, onHide }) => {
     return url;
   };
   return (
-    <Modal show={show} onHide={onHide} size="md" centered>
+    <Modal
+      show={show}
+      onHide={onHide}
+      size="xl" // <-- Make modal extra large
+      centered
+      dialogClassName="resource-video-modal"
+      backdrop={isVideo ? "static" : true}
+      keyboard={!isVideo ? true : false}
+      style={{ maxWidth: "98vw" }} // <-- Prevent overflow on very small screens
+    >
       <Modal.Header closeButton>
         <Modal.Title>{resource.title}</Modal.Title>
       </Modal.Header>
-      <Modal.Body>
-        {resource.type === "video_url" && (
-          <div className="ratio ratio-16x9">
+      <Modal.Body
+        style={{
+          padding: 0,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: 0,
+          background: "#0001"
+        }}
+      >
+        {resource.type === 'video_url' && (
+          <div
+            style={{
+              width: "100%",
+              maxWidth: "900px",
+              aspectRatio: "16/9",
+              margin: "auto"
+            }}
+          >
             <iframe
               src={isYouTubeUrl(resource.url) ? getYouTubeEmbedUrl(resource.url) : resource.url}
               title={resource.title}
               allowFullScreen
-              style={{ border: 0, width: "100%", height: "100%" }}
+              style={{
+                border: 0,
+                width: "100%",
+                height: "100%",
+                minHeight: 320,
+                background: "#000"
+              }}
             ></iframe>
           </div>
         )}
-        {resource.type === "video_file" && resource.url && (
-          <div style={{ display: "flex", justifyContent: "center" }}>
+        {resource.type === 'video_file' && resource.url && (
+          <div
+            style={{
+              width: "100%",
+              maxWidth: "900px",
+              aspectRatio: "16/9",
+              margin: "auto",
+              display: "flex",
+              justifyContent: "center"
+            }}
+          >
             <video
-              style={{ maxWidth: 500, width: "100%", borderRadius: 8 }}
+              style={{
+                width: "100%",
+                height: "100%",
+                maxHeight: "70vh",
+                borderRadius: 8,
+                background: "#000"
+              }}
               controls
             >
               <source src={resource.url} type={resource.fileDetails?.contentType || "video/mp4"} />
               Your browser does not support the video tag.
             </video>
+          </div>
+        )}
+        {resource.type === 'document' && resource.url && !resource.url.startsWith("data:application/pdf") && (
+          <a
+            href={resource.url}
+            download={resource.fileDetails?.originalName || resource.title}
+            className="btn btn-primary m-4"
+          >
+            <FaFile className="me-2" />
+            Download Document
+          </a>
+        )}
+        {resource.type === 'document_url' && (
+          <div className="text-center w-100 my-4">
+            <a
+              href={resource.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-primary"
+            >
+              <FaFile className="me-2" />
+              Open Document
+            </a>
           </div>
         )}
       </Modal.Body>
@@ -229,6 +302,58 @@ const ResourceForm = ({ unitIndex, lessonIndex, onSubmit, onCancel }) => {
   );
 };
 
+const TopRightAlert = ({ show, variant, message, onClose }) => {
+  const iconMap = {
+    success: <FaCheckCircle className="me-2" />,
+    error: <FaTimesCircle className="me-2" />,
+    info: <FaInfoCircle className="me-2" />,
+  };
+  const backgroundMap = {
+    success: "#4CAF50",
+    error: "#F44336",
+    info: "#2196F3",
+  };
+  return (
+    <ToastContainer
+      position="top-end"
+      className="p-3"
+      style={{
+        zIndex: 1060,
+        position: "fixed", // <-- make it fixed
+        top: 16,
+        right: 16,
+      }}
+    >
+      <Toast
+        show={show}
+        onClose={onClose}
+        delay={4000}
+        autohide
+        style={{
+          backgroundColor: backgroundMap[variant],
+          border: "none",
+          borderRadius: "12px",
+          minWidth: "300px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+        }}
+      >
+        <Toast.Body className="d-flex align-items-center justify-content-between text-white p-3">
+          <div className="d-flex align-items-center">
+            {iconMap[variant]}
+            <span style={{ fontSize: "14px", fontWeight: "500" }}>{message}</span>
+          </div>
+          <FaTimes
+            className="ms-3"
+            style={{ cursor: "pointer", fontSize: "12px" }}
+            onClick={onClose}
+          />
+        </Toast.Body>
+      </Toast>
+    </ToastContainer>
+  );
+};
+
+
 const EditCourseById = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -244,6 +369,10 @@ const EditCourseById = () => {
   
   const [selectedResource, setSelectedResource] = useState(null);
 const [showResourceModal, setShowResourceModal] = useState(false);
+
+const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [showErrorAlert, setShowErrorAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -668,6 +797,7 @@ const [showResourceModal, setShowResourceModal] = useState(false);
     e.preventDefault();
     setSuccess("");
     setError("");
+    setAlertMessage("");
     try {
       // Calculate total duration
       const totalDuration = (course.units || []).reduce((total, unit) => {
@@ -709,26 +839,40 @@ const [showResourceModal, setShowResourceModal] = useState(false);
         })),
       };
 
+      setLoading(true);
+      setAlertMessage("Saving changes...");
+      setShowSuccessAlert(true);
+
       await axios.put(`/api/courses/${id}`, updateData);
 
       setSuccess("Course updated successfully!");
+      setAlertMessage("Course updated successfully!");
+      setShowSuccessAlert(true);
       setTimeout(() => {
         navigate("/edit-courses");
       }, 1500);
     } catch (err) {
-      setError(err.response?.data?.message || "Error updating course");
+      const msg = err.response?.data?.message || "Error updating course";
+      setError(msg);
+      setAlertMessage(msg);
+      setShowErrorAlert(true);
+    } finally {
+      setLoading(false);
     }
   };
 
   if (loading) {
-    return (
-      <div className="text-center py-5 mt-5 min-vh-100">
-        <Spinner animation="border" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </Spinner>
-      </div>
-    );
-  }
+  return (
+    <div
+      className="d-flex justify-content-center align-items-center"
+      style={{ minHeight: "100vh" }}
+    >
+      <Spinner animation="border" role="status" style={{ width: 60, height: 60 }}>
+        <span className="visually-hidden">Loading...</span>
+      </Spinner>
+    </div>
+  );
+}
 
   if (!course) {
     return (
@@ -742,6 +886,18 @@ const [showResourceModal, setShowResourceModal] = useState(false);
 
   return (
     <Container className="py-4 mt-3">
+      <TopRightAlert
+        show={showSuccessAlert}
+        variant="success"
+        message={alertMessage}
+        onClose={() => setShowSuccessAlert(false)}
+      />
+      <TopRightAlert
+        show={showErrorAlert}
+        variant="error"
+        message={alertMessage}
+        onClose={() => setShowErrorAlert(false)}
+      />
       <h2 className="mb-4 mt-5 text-center">Edit Course</h2>
       <Row className="justify-content-center">
         <Col md={10} lg={8}>
@@ -1371,7 +1527,7 @@ const [showResourceModal, setShowResourceModal] = useState(false);
                       aria-hidden="true"
                       className="me-2"
                     />
-                    Saving...
+                    Saving changes...
                   </>
                 ) : (
                   "Save Changes"

@@ -402,113 +402,130 @@ const AdminUniversalCertificate = () => {
                     />
                   )}
                   {fields.map((field, idx) => (
-                    <React.Fragment key={field.key}>
-                      <div
-                        ref={el => (fieldRefs.current[idx] = el)}
-                        style={getFieldStyle(field)}
-                        onClick={e => {
-                          e.stopPropagation();
-                          setSelectedField(field.key);
-                        }}
-                        onDoubleClick={e => {
-                          e.stopPropagation();
-                          setFields((prev) =>
-                            prev.map((f) =>
-                              f.key === field.key
-                                ? { ...f, editing: true }
-                                : { ...f, editing: false }
-                            )
-                          );
-                        }}
-                      >
-                        {field.editing ? (
-                          <textarea
-                            autoFocus
-                            value={field.text}
-                            onChange={e =>
-                              handleEditText(field.key, e.target.value)
-                            }
-                            onBlur={() =>
-                              setFields(prev =>
-                                prev.map(f =>
-                                  f.key === field.key
-                                    ? { ...f, editing: false }
-                                    : f
-                                )
-                              )
-                            }
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              background: "transparent",
-                              border: "none",
-                              outline: "none",
-                              fontFamily: font.family,
-                              fontSize: font[field.fontSizeKey] * zoom,
-                              color: font.color,
-                              fontWeight: "bold",
-                              textAlign: "center",
-                              resize: "none",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          />
-                        ) : (
-                          <span
-                            style={{
-                              width: "100%",
-                              textAlign: "center",
-                              whiteSpace: "pre-line",
-                              pointerEvents: "none",
-                            }}
-                          >
-                            {field.text}
-                          </span>
-                        )}
-                      </div>
-                      {selectedField === field.key && (
-                        <Moveable
-                          target={fieldRefs.current[idx]}
-                          origin={false}
-                          edge={false}
-                          draggable={true}
-                          resizable={true}
-                          throttleDrag={0}
-                          throttleResize={0}
-                          keepRatio={false}
-                          onDrag={({ left, top }) => {
-                            window.requestAnimationFrame(() => {
-                              updateField(field.key, {
-                                x: Math.round(left / zoom),
-                                y: Math.round(top / zoom),
-                              });
-                            });
-                          }}
-                          onResize={({ width, height, drag }) => {
-                            window.requestAnimationFrame(() => {
-                              updateField(field.key, {
-                                width: Math.max(60, width / zoom),
-                                height: Math.max(30, height / zoom),
-                                x: Math.round(drag.left / zoom),
-                                y: Math.round(drag.top / zoom),
-                              });
-                            });
-                          }}
-                          renderDirections={["nw", "ne", "sw", "se"]}
-                          padding={{ left: 0, top: 0, right: 0, bottom: 0 }}
-                          snappable={true}
-                          snapThreshold={5}
-                          bounds={{
-                            left: 0,
-                            top: 0,
-                            right: CANVAS_WIDTH * zoom,
-                            bottom: CANVAS_HEIGHT * zoom,
-                          }}
-                        />
-                      )}
-                    </React.Fragment>
-                  ))}
+  <React.Fragment key={field.key}>
+    <div
+      ref={el => (fieldRefs.current[idx] = el)}
+      style={getFieldStyle(field)}
+      onClick={e => {
+        e.stopPropagation();
+        setSelectedField(field.key);
+      }}
+      onDoubleClick={e => {
+        e.stopPropagation();
+        setFields((prev) =>
+          prev.map((f) =>
+            f.key === field.key
+              ? { ...f, editing: true }
+              : { ...f, editing: false }
+          )
+        );
+      }}
+    >
+      {/* Center marker for clarity */}
+      <span
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "50%",
+          width: 8,
+          height: 8,
+          background: field.key === "date" ? "#007bff" : "#bbb",
+          borderRadius: "50%",
+          transform: "translate(-50%, -50%)",
+          opacity: 0.7,
+          pointerEvents: "none",
+          zIndex: 10,
+          border: "2px solid #fff"
+        }}
+      />
+      {field.editing ? (
+        <textarea
+          autoFocus
+          value={field.text}
+          onChange={e =>
+            handleEditText(field.key, e.target.value)
+          }
+          onBlur={() =>
+            setFields(prev =>
+              prev.map(f =>
+                f.key === field.key
+                  ? { ...f, editing: false }
+                  : f
+              )
+            )
+          }
+          style={{
+            width: "100%",
+            height: "100%",
+            background: "transparent",
+            border: "none",
+            outline: "none",
+            fontFamily: font.family,
+            fontSize: font[field.fontSizeKey] * zoom,
+            color: font.color,
+            fontWeight: "bold",
+            textAlign: "center",
+            resize: "none",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        />
+      ) : (
+        <span
+          style={{
+            width: "100%",
+            textAlign: "center",
+            whiteSpace: "pre-line",
+            pointerEvents: "none",
+          }}
+        >
+          {field.text}
+        </span>
+      )}
+    </div>
+    {selectedField === field.key && (
+      <Moveable
+        target={fieldRefs.current[idx]}
+        origin={false}
+        edge={false}
+        draggable={true}
+        resizable={true}
+        throttleDrag={0}
+        throttleResize={0}
+        keepRatio={false}
+        onDrag={({ left, top }) => {
+          window.requestAnimationFrame(() => {
+            updateField(field.key, {
+              x: Math.round(left / zoom),
+              y: Math.round(top / zoom),
+            });
+          });
+        }}
+        onResize={({ width, height, drag }) => {
+          window.requestAnimationFrame(() => {
+            updateField(field.key, {
+              width: Math.max(60, width / zoom),
+              height: Math.max(30, height / zoom),
+              x: Math.round(drag.left / zoom),
+              y: Math.round(drag.top / zoom),
+            });
+          });
+        }}
+        renderDirections={["nw", "ne", "sw", "se"]}
+        padding={{ left: 0, top: 0, right: 0, bottom: 0 }}
+        snappable={true}
+        snapThreshold={5}
+        bounds={{
+          left: 0,
+          top: 0,
+          right: CANVAS_WIDTH * zoom,
+          bottom: CANVAS_HEIGHT * zoom,
+        }}
+      />
+    )}
+  </React.Fragment>
+))}
                 </div>
                 <div className="text-center mt-2">
                   <small>
