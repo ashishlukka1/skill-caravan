@@ -11,16 +11,66 @@ import {
   Col,
   Container,
   Accordion,
+  Toast,
+  ToastContainer,
 } from "react-bootstrap";
-import { FaPlus, FaTrash, FaFileAlt } from "react-icons/fa";
+import { FaPlus, FaTrash, FaFileAlt, FaCheckCircle, FaTimesCircle, FaInfoCircle, FaTimes } from "react-icons/fa";
 import { fileToBase64 } from "../../utils/fileBase64";
 import "./AddCourse.css";
+
+// --- Top-Right Alert Component ---
+const TopRightAlert = ({ show, variant, message, onClose }) => {
+  const iconMap = {
+    success: <FaCheckCircle className="me-2" />,
+    error: <FaTimesCircle className="me-2" />,
+    info: <FaInfoCircle className="me-2" />,
+  };
+  const backgroundMap = {
+    success: "#4CAF50",
+    error: "#F44336",
+    info: "#2196F3",
+  };
+  return (
+    <ToastContainer position="top-end" className="p-3" style={{ zIndex: 1060 }}>
+      <Toast
+        show={show}
+        onClose={onClose}
+        delay={4000}
+        autohide
+        style={{
+          backgroundColor: backgroundMap[variant],
+          border: "none",
+          borderRadius: "12px",
+          minWidth: "300px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+        }}
+      >
+        <Toast.Body className="d-flex align-items-center justify-content-between text-white p-3">
+          <div className="d-flex align-items-center">
+            {iconMap[variant]}
+            <span style={{ fontSize: "14px", fontWeight: "500" }}>{message}</span>
+          </div>
+          <FaTimes
+            className="ms-3"
+            style={{ cursor: "pointer", fontSize: "12px" }}
+            onClick={onClose}
+          />
+        </Toast.Body>
+      </Toast>
+    </ToastContainer>
+  );
+};
 
 const AddCourse = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  // Alert states
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [showErrorAlert, setShowErrorAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
 
   const [course, setCourse] = useState({
     title: "",
@@ -315,18 +365,23 @@ const AddCourse = () => {
     setLoading(true);
     setError("");
     setSuccess("");
+    setAlertMessage("");
     try {
       // POST to backend
       const response = await axios.post("/api/courses", course);
       setSuccess("Course created successfully!");
+      setAlertMessage("Course created successfully!");
+      setShowSuccessAlert(true);
       setTimeout(() => {
         navigate(`/courses`);
       }, 1500);
     } catch (err) {
-      setError(
+      const msg =
         err.response?.data?.message ||
-          "Failed to create course. Please check all fields."
-      );
+        "Failed to create course. Please check all fields.";
+      setError(msg);
+      setAlertMessage(msg);
+      setShowErrorAlert(true);
     } finally {
       setLoading(false);
     }
@@ -335,11 +390,24 @@ const AddCourse = () => {
   // --- Render ---
   return (
     <Container className="py-5 mt-5">
+      {/* Top-Right Alerts */}
+      <TopRightAlert
+        show={showSuccessAlert}
+        variant="success"
+        message={alertMessage}
+        onClose={() => setShowSuccessAlert(false)}
+      />
+      <TopRightAlert
+        show={showErrorAlert}
+        variant="error"
+        message={alertMessage}
+        onClose={() => setShowErrorAlert(false)}
+      />
       <h2 className="mb-4 text-center">Add New Course</h2>
       <Row className="justify-content-center">
         <Col md={10} lg={8}>
-          {error && <Alert variant="danger">{error}</Alert>}
-          {success && <Alert variant="success">{success}</Alert>}
+          {/* {error && <Alert variant="danger">{error}</Alert>}
+          {success && <Alert variant="success">{success}</Alert>} */}
           <Form onSubmit={handleSubmit}>
             <Card className="mb-4 shadow-sm">
               <Card.Body>
