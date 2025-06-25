@@ -118,7 +118,7 @@ const ResourceForm = ({ unitIndex, lessonIndex, onSubmit, onCancel }) => {
             <Form.Select value={type} onChange={(e) => setType(e.target.value)}>
               <option value="video_url">Video URL</option>
               <option value="video_file">Video File</option>
-              <option value="document">Document</option>
+              <option value="document">Document(Limit: 10mb)</option>
             </Form.Select>
           </Form.Group>
         </Col>

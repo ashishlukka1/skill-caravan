@@ -98,13 +98,20 @@ router.get("/test-user", authMiddleware, async (req, res) => {
 // --- LIST ALL COURSES ---
 router.get("/", async (req, res) => {
   try {
-    const courses = await Course.find()
-      .populate("instructor", "name email")
+    // Pagination support
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 12;
+    const skip = (page - 1) * limit;
+
+    // Only select summary fields
+    const courses = await Course.find({}, "title thumbnail difficulty description createdAt studentsEnrolled averageRating certificate units category")
       .sort({ createdAt: -1 })
-      .select("-units.assignment.assignmentSets.questions");
-    res.json(courses);
+      .skip(skip)
+      .limit(limit);
+
+    const total = await Course.countDocuments();
+    res.json({ courses, total });
   } catch (err) {
-    console.error("Error fetching courses:", err);
     res.status(500).json({ message: "Error fetching courses" });
   }
 });

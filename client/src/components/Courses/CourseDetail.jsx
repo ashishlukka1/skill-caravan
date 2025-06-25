@@ -1,11 +1,105 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Container, Row, Col, Badge, Spinner, Alert, Button, ProgressBar, Card, Accordion, Modal } from "react-bootstrap";
-import { FaLock, FaCheckCircle, FaChevronRight, FaPlay, FaFile } from "react-icons/fa";
+import {
+  Container,
+  Row,
+  Col,
+  Badge,
+  Spinner,
+  Alert,
+  Button,
+  ProgressBar,
+  Card,
+  Accordion,
+  Modal,
+  Toast,
+  ToastContainer,
+} from "react-bootstrap";
+import { FaLock, FaCheckCircle, FaChevronRight, FaPlay, FaFile, FaInfoCircle, FaCheck, FaTimesCircle, FaTimes, FaClock, FaCertificate } from "react-icons/fa";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "../../utils/axios";
 import { AuthContext } from "../../context/AuthContext";
 import "./CourseDetail.css";
+import "../Courses/Courses.css";
 
+// --- Skeleton Loader for Course Detail ---
+const CourseDetailSkeleton = () => (
+  <div className="course-detail-page min-vh-100 mt-5">
+    <Container>
+      <Row className="align-items-center mb-4">
+        <Col md={8}>
+          <div className="skeleton skeleton-title" style={{ width: "60%", height: 36, marginBottom: 16 }} />
+          <div className="skeleton skeleton-desc" style={{ width: "90%", height: 18, marginBottom: 16 }} />
+          <div className="skeleton skeleton-stat" style={{ width: 120, height: 16, marginBottom: 8 }} />
+          <div className="skeleton skeleton-stat" style={{ width: 80, height: 16, marginBottom: 8 }} />
+          <div className="skeleton skeleton-stat" style={{ width: 100, height: 16, marginBottom: 8 }} />
+          <div className="skeleton skeleton-btn" style={{ width: 180, height: 24, marginTop: 16 }} />
+        </Col>
+        <Col md={4} className="text-end">
+          <div className="skeleton skeleton-img" style={{ width: "100%", minHeight: 160, borderRadius: 12 }} />
+        </Col>
+      </Row>
+      <Row>
+        <Col md={4} lg={3}>
+          <div className="skeleton skeleton-title" style={{ width: "80%", height: 22, marginBottom: 16 }} />
+          {Array.from({ length: 3 }).map((_, idx) => (
+            <div key={idx} className="skeleton skeleton-desc" style={{ width: "100%", height: 32, marginBottom: 12, borderRadius: 8 }} />
+          ))}
+        </Col>
+        <Col md={8} lg={9}>
+          <div className="skeleton skeleton-title" style={{ width: "60%", height: 22, marginBottom: 16 }} />
+          {Array.from({ length: 2 }).map((_, idx) => (
+            <div key={idx} className="skeleton skeleton-desc" style={{ width: "100%", height: 60, marginBottom: 18, borderRadius: 8 }} />
+          ))}
+        </Col>
+      </Row>
+    </Container>
+  </div>
+);
+
+// --- Top-Right Alert Component ---
+const TopRightAlert = ({ show, variant, message, onClose }) => {
+  const iconMap = {
+    success: <FaCheckCircle className="me-2" />,
+    error: <FaTimesCircle className="me-2" />,
+    info: <FaInfoCircle className="me-2" />,
+  };
+  const backgroundMap = {
+    success: "#4CAF50",
+    error: "#F44336",
+    info: "#2196F3",
+  };
+  return (
+    <ToastContainer position="top-end" className="p-3" style={{ zIndex: 1060 }}>
+      <Toast
+        show={show}
+        onClose={onClose}
+        delay={4000}
+        autohide
+        style={{
+          backgroundColor: backgroundMap[variant],
+          border: "none",
+          borderRadius: "12px",
+          minWidth: "300px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+        }}
+      >
+        <Toast.Body className="d-flex align-items-center justify-content-between text-white p-3">
+          <div className="d-flex align-items-center">
+            {/* {iconMap[variant]} */}
+            <span style={{ fontSize: "13px", fontWeight: "500" }}>{message}</span>
+          </div>
+          {/* <FaTimes
+            className="ms-3"
+            style={{ cursor: "pointer", fontSize: "12px" }}
+            onClick={onClose}
+          /> */}
+        </Toast.Body>
+      </Toast>
+    </ToastContainer>
+  );
+};
+
+// --- Resource Modal ---
 const ResourceModal = ({ resource, show, onHide, onComplete }) => {
   if (!resource) return null;
   const isVideo = resource.type === 'video_file' || resource.type === 'video_url';
@@ -27,7 +121,7 @@ const ResourceModal = ({ resource, show, onHide, onComplete }) => {
     <Modal
       show={show}
       onHide={onHide}
-      size="md" // Change from "lg" to "md"
+      size="md"
       centered
       dialogClassName="resource-video-modal"
       backdrop={isVideo ? "static" : true}
@@ -50,7 +144,7 @@ const ResourceModal = ({ resource, show, onHide, onComplete }) => {
         {resource.type === 'video_file' && resource.url && (
           <div style={{ display: "flex", justifyContent: "center" }}>
             <video
-              style={{ maxWidth: 500,maxHeight: 550, width: "100%", borderRadius: 8 }}
+              style={{ maxWidth: 500, maxHeight: 550, width: "100%", borderRadius: 8 }}
               controls
             >
               <source src={resource.url} type={resource.fileDetails?.contentType || "video/mp4"} />
@@ -84,20 +178,28 @@ const ResourceModal = ({ resource, show, onHide, onComplete }) => {
       </Modal.Body>
     </Modal>
   );
-};  
+};
 
 const CourseDetail = () => {
   const [course, setCourse] = useState(null);
   const [progress, setProgress] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [selectedUnit, setSelectedUnit] = useState(0);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
   const [selectedResource, setSelectedResource] = useState(null);
   const [showResourceModal, setShowResourceModal] = useState(false);
+
+  // Alerts
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertType, setAlertType] = useState("info");
+  const [alertMsg, setAlertMsg] = useState("");
+
+  // Certificate alert
   const [showCertAlert, setShowCertAlert] = useState(false);
 
+  const [markingLesson, setMarkingLesson] = useState({});
+  const [error, setError] = useState("");
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
@@ -105,6 +207,7 @@ const CourseDetail = () => {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      setError("");
       try {
         const courseRes = await axios.get(`/api/courses/${id}`);
         setCourse(courseRes.data);
@@ -118,7 +221,7 @@ const CourseDetail = () => {
               const progressRes = await axios.get(`/api/progress/${id}`);
               setProgress(progressRes.data);
             } catch (progressErr) {
-              console.error("Error fetching progress:", progressErr);
+              setError("Error fetching progress");
             }
           }
         } else {
@@ -145,36 +248,40 @@ const CourseDetail = () => {
       certificate.certificateUrl
     ) {
       setShowCertAlert(true);
+      setAlertType("success");
+      setAlertMsg("Congratulations! Your certificate has been issued.");
+      setShowAlert(true);
       const timer = setTimeout(() => setShowCertAlert(false), 10000);
       return () => clearTimeout(timer);
     }
   }, [progress, certificate]);
 
   const handleEnroll = async () => {
-  if (!user) {
-    navigate('/login');
-    return;
-  }
-
-  setEnrolling(true);
-  try {
-    const enrollRes = await axios.post(`/api/courses/${id}/enroll`);
-    if (enrollRes.data.enrollment) {
-      setProgress(enrollRes.data.enrollment);
-      setIsEnrolled(true);
-      // Re-fetch the course to get units and all content
-      const courseRes = await axios.get(`/api/courses/${id}`);
-      setCourse(courseRes.data);
+    if (!user) {
+      navigate('/login');
+      return;
     }
-  } catch (err) {
-    const errorMessage = err.response?.data?.message || "Failed to enroll in course";
-    setError(errorMessage);
-  } finally {
-    setEnrolling(false);
-  }
-};
-
-  const [markingLesson, setMarkingLesson] = useState({}); // { "unitIdx-lessonIdx": true }
+    setEnrolling(true);
+    try {
+      const enrollRes = await axios.post(`/api/courses/${id}/enroll`);
+      if (enrollRes.data.enrollment) {
+        setProgress(enrollRes.data.enrollment);
+        setIsEnrolled(true);
+        const courseRes = await axios.get(`/api/courses/${id}`);
+        setCourse(courseRes.data);
+        setAlertType("success");
+        setAlertMsg("Successfully enrolled in course!");
+        setShowAlert(true);
+      }
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || "Failed to enroll in course";
+      setAlertType("error");
+      setAlertMsg(errorMessage);
+      setShowAlert(true);
+    } finally {
+      setEnrolling(false);
+    }
+  };
 
   const handleLessonComplete = async (unitIdx, lessonIdx) => {
     if (!isEnrolled) return;
@@ -184,11 +291,15 @@ const CourseDetail = () => {
         `/api/progress/${id}/unit/${unitIdx}/lesson/${lessonIdx}`,
         { completed: true }
       );
-      // Fetch the updated progress
       const progressRes = await axios.get(`/api/progress/${id}`);
       setProgress(progressRes.data);
+      setAlertType("success");
+      setAlertMsg("Lesson marked as complete!");
+      setShowAlert(true);
     } catch (err) {
-      setError("Failed to update lesson progress");
+      setAlertType("error");
+      setAlertMsg("Failed to update lesson progress");
+      setShowAlert(true);
     } finally {
       setMarkingLesson(prev => ({ ...prev, [`${unitIdx}-${lessonIdx}`]: false }));
     }
@@ -208,8 +319,13 @@ const CourseDetail = () => {
         }
       );
       setProgress(response.data);
+      setAlertType("success");
+      setAlertMsg("Resource marked as complete!");
+      setShowAlert(true);
     } catch (err) {
-      setError("Failed to update resource progress");
+      setAlertType("error");
+      setAlertMsg("Failed to update resource progress");
+      setShowAlert(true);
     }
   };
 
@@ -219,10 +335,12 @@ const CourseDetail = () => {
       const unit = course.units[unitIdx];
       const assignmentSets = unit.assignment?.assignmentSets;
       if (!assignmentSets?.length) {
-        setError("No assignment sets available");
+        setAlertType("error");
+        setAlertMsg("No assignment sets available");
+        setShowAlert(true);
         return;
       }
-      const randomSetNumber = assignmentSets.length === 1 
+      const randomSetNumber = assignmentSets.length === 1
         ? assignmentSets[0].setNumber
         : assignmentSets[Math.floor(Math.random() * assignmentSets.length)].setNumber;
 
@@ -231,8 +349,13 @@ const CourseDetail = () => {
         { setNumber: randomSetNumber }
       );
       setProgress(response.data);
+      setAlertType("success");
+      setAlertMsg("Assignment started!");
+      setShowAlert(true);
     } catch (err) {
-      setError("Failed to assign assignment set");
+      setAlertType("error");
+      setAlertMsg("Failed to assign assignment set");
+      setShowAlert(true);
     }
   };
 
@@ -246,7 +369,7 @@ const CourseDetail = () => {
     const unit = course?.units?.[unitIdx];
     if (!unit || !unitProgress) return false;
     return unitProgress.lessonsCompleted?.length === unit.lessons.length &&
-           unitProgress.lessonsCompleted.every(l => l.completed);
+      unitProgress.lessonsCompleted.every(l => l.completed);
   };
 
   // Helper to get the total possible score for the assigned set
@@ -386,12 +509,10 @@ const CourseDetail = () => {
     );
   };
 
+  // --- RENDER LOGIC ---
+
   if (loading) {
-    return (
-      <div className="text-center m-5 py-5 min-vh-100 ">
-        <Spinner animation="border" variant="primary" className="m-5"/>
-      </div>
-    );
+    return <CourseDetailSkeleton />;
   }
 
   if (error || !course) {
@@ -423,6 +544,12 @@ const CourseDetail = () => {
             </Button>
           </Card.Body>
         </Card>
+        <TopRightAlert
+          show={showAlert}
+          variant={alertType}
+          message={alertMsg}
+          onClose={() => setShowAlert(false)}
+        />
       </Container>
     );
   }
@@ -435,56 +562,45 @@ const CourseDetail = () => {
 
   return (
     <div className="course-detail-page min-vh-100">
-      {/* --- Certificate Notification Alert --- */}
-      {showCertAlert && certificate && (
-        <Container className="mt-4">
-          <Alert
-            variant="success"
-            onClose={() => setShowCertAlert(false)}
-            dismissible
-            className="text-center"
-          >
-            Congratulations! Your certificate has been issued.
-            <br />
-            <a
-              href={certificate.certificateUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-success mt-2"
-            >
-              View Certificate
-            </a>
-          </Alert>
-        </Container>
-      )}
+      {/* --- Top-Right Alerts --- */}
+      <TopRightAlert
+        show={showAlert}
+        variant={alertType}
+        message={alertMsg}
+        onClose={() => setShowAlert(false)}
+      />
 
+     
+
+      {/* --- Course Header --- */}
       <div className="course-header">
         <Container>
           <Row className="align-items-center">
-            <Col md={8}>
+            <Col md={8} xs={12}>
               <h1>{course.title}</h1>
               <p className="course-description">{course.description}</p>
               <div className="course-meta">
                 <Badge bg="primary" className="me-2">{course.category}</Badge>
                 <Badge bg="secondary" className="me-2">{course.difficulty}</Badge>
                 <span className="me-3">
-                  <i className="far fa-clock"></i> {course.duration} minutes
+                  <FaClock className="me-1" /> {course.duration} minutes
                 </span>
               </div>
               <div className="mt-3">
-                <ProgressBar 
-                  now={progress?.progress || 0} 
+                <ProgressBar
+                  now={progress?.progress || 0}
                   label={`${progress?.progress || 0}% Complete`}
                   variant="info"
                 />
               </div>
             </Col>
-            <Col md={4} className="text-end">
+            <Col md={4} xs={12} className="text-end mt-3 mt-md-0">
               {course.thumbnail && (
                 <img
                   src={course.thumbnail}
                   alt={course.title}
                   className="course-thumbnail1"
+                  style={{ maxWidth: "100%", borderRadius: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.15)" }}
                 />
               )}
             </Col>
@@ -492,10 +608,11 @@ const CourseDetail = () => {
         </Container>
       </div>
 
+      {/* --- Main Content --- */}
       {hasUnits && unit ? (
         <Container className="mt-4">
           <Row>
-            <Col md={4} lg={3}>
+            <Col md={4} lg={3} xs={12} className="mb-4 mb-md-0">
               <div className="units-sidebar">
                 <h5 className="mb-3">Course Units</h5>
                 <ul className="units-list">
@@ -505,9 +622,7 @@ const CourseDetail = () => {
                     return (
                       <li
                         key={idx}
-                        className={`unit-list-item ${
-                          selectedUnit === idx ? "active" : ""
-                        } ${isUnlocked ? "" : "locked"}`}
+                        className={`unit-list-item ${selectedUnit === idx ? "active" : ""} ${isUnlocked ? "" : "locked"}`}
                         onClick={() => isUnlocked && setSelectedUnit(idx)}
                       >
                         <div className="unit-info">
@@ -525,18 +640,18 @@ const CourseDetail = () => {
               </div>
             </Col>
 
-            <Col md={8} lg={9}>
+            <Col md={8} lg={9} xs={12}>
               <Card className="unit-content-card">
                 <Card.Body>
-                  <div className="d-flex justify-content-between align-items-center mb-4">
-                    <h4 className="mb-0">{unit.title}</h4>
+                  <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+                    <h4 className="mb-2 mb-md-0">{unit.title}</h4>
                     {unitProgress?.completed && (
                       <Badge bg="success" className="unit-complete-badge">
                         <FaCheckCircle className="me-1" /> Completed
                       </Badge>
                     )}
                   </div>
-                  
+
                   <h6 className="section-title">Lessons</h6>
                   <Accordion defaultActiveKey="0" className="lesson-accordion">
                     {unit.lessons.map((lesson, idx) => {
@@ -544,8 +659,8 @@ const CourseDetail = () => {
                         l => l.lessonIndex === idx && l.completed
                       );
                       return (
-                        <Accordion.Item 
-                          eventKey={idx.toString()} 
+                        <Accordion.Item
+                          eventKey={idx.toString()}
                           key={idx}
                           className={!isUnitUnlocked ? 'locked-unit' : ''}
                         >
@@ -569,53 +684,51 @@ const CourseDetail = () => {
                               <div className="resources-section mb-3">
                                 <h6>Resources:</h6>
                                 {lesson.resources.map((resource, resourceIdx) => {
-  const isPdf = resource.type === "document" && resource.url && resource.url.startsWith("data:application/pdf");
-  const handleResourceClick = () => {
-    if (isPdf) {
-      // Convert base64 to Blob and open in new tab
-      const byteString = atob(resource.url.split(',')[1]);
-      const ab = new ArrayBuffer(byteString.length);
-      const ia = new Uint8Array(ab);
-      for (let i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i);
-      }
-      const blob = new Blob([ab], { type: "application/pdf" });
-      const blobUrl = URL.createObjectURL(blob);
-      const win = window.open(blobUrl, "_blank");
-      // Try to set the tab title (not all browsers support this)
-      if (win) {
-        win.document.title = resource.title || "Document";
-      }
-    } else if (resource.type === "document" && resource.url) {
-      // For non-PDF documents, download
-      const link = document.createElement("a");
-      link.href = resource.url;
-      link.download = resource.fileDetails?.originalName || resource.title || "document";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } else {
-      // For video or URL, open modal or handle as before
-      setSelectedResource({ ...resource, unitIdx: selectedUnit, lessonIdx: idx, resourceIdx });
-      setShowResourceModal(true);
-    }
-  };
+                                  const isPdf = resource.type === "document" && resource.url && resource.url.startsWith("data:application/pdf");
+                                  const handleResourceClick = () => {
+                                    if (isPdf) {
+                                      // Convert base64 to Blob and open in new tab
+                                      const byteString = atob(resource.url.split(',')[1]);
+                                      const ab = new ArrayBuffer(byteString.length);
+                                      const ia = new Uint8Array(ab);
+                                      for (let i = 0; i < byteString.length; i++) {
+                                        ia[i] = byteString.charCodeAt(i);
+                                      }
+                                      const blob = new Blob([ab], { type: "application/pdf" });
+                                      const blobUrl = URL.createObjectURL(blob);
+                                      const win = window.open(blobUrl, "_blank");
+                                      if (win) {
+                                        win.document.title = resource.title || "Document";
+                                      }
+                                    } else if (resource.type === "document" && resource.url) {
+                                      // For non-PDF documents, download
+                                      const link = document.createElement("a");
+                                      link.href = resource.url;
+                                      link.download = resource.fileDetails?.originalName || resource.title || "document";
+                                      document.body.appendChild(link);
+                                      link.click();
+                                      document.body.removeChild(link);
+                                    } else {
+                                      setSelectedResource({ ...resource, unitIdx: selectedUnit, lessonIdx: idx, resourceIdx });
+                                      setShowResourceModal(true);
+                                    }
+                                  };
 
-  return (
-    <Button
-      key={resourceIdx}
-      variant="outline-secondary"
-      size="sm"
-      className="me-2 mb-2"
-      onClick={handleResourceClick}
-      disabled={!isUnitUnlocked}
-    >
-      {(resource.type === 'video_url' || resource.type === 'video_file') && <FaPlay className="me-1" />}
-      {(resource.type === 'document' || resource.type === 'document_url') && <FaFile className="me-1" />}
-      {resource.title}
-    </Button>
-  );
-})}   
+                                  return (
+                                    <Button
+                                      key={resourceIdx}
+                                      variant="outline-secondary"
+                                      size="sm"
+                                      className="me-2 mb-2"
+                                      onClick={handleResourceClick}
+                                      disabled={!isUnitUnlocked}
+                                    >
+                                      {(resource.type === 'video_url' || resource.type === 'video_file') && <FaPlay className="me-1" />}
+                                      {(resource.type === 'document' || resource.type === 'document_url') && <FaFile className="me-1" />}
+                                      {resource.title}
+                                    </Button>
+                                  );
+                                })}
                               </div>
                             )}
                             {/* Video URL Section */}
@@ -624,7 +737,7 @@ const CourseDetail = () => {
                                 {lesson.videoUrl.includes("youtube.com") || lesson.videoUrl.includes("youtu.be") ? (
                                   <div className="ratio ratio-16x9 mb-2">
                                     <iframe
-                                      src={getYouTubeEmbedUrl(lesson.videoUrl)}
+                                      src={lesson.videoUrl}
                                       title="Lesson Video"
                                       allowFullScreen
                                     ></iframe>
@@ -674,18 +787,28 @@ const CourseDetail = () => {
         </Container>
       )}
 
-      {/* --- Certificate Link at Bottom --- */}
+      {/* --- Certificate Alert at Bottom (one line, green, always visible after certificate is received) --- */}
       {certificate && (
-        <Container className="my-5 text-center">
-          <a
-            href={certificate.certificateUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-outline-primary mt-2 mb-2  "
-          >
-            View Certificate
-          </a>
-        </Container>
+        <div className="certificate-bottom-alert">
+          <Container className="d-flex align-items-center justify-content-center flex-wrap">
+            <FaCheckCircle className="me-2 text-white" size={22} />
+            <span className="fw-bold text-white" style={{ fontSize: "1rem" }}>
+              Certificate Received:
+            </span>
+            <span className="text-white ms-2" style={{ fontSize: "1rem" }}>
+              Congratulations! You have completed this course.
+            </span>
+            <a
+              href={certificate.certificateUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-light btn-sm ms-3"
+              style={{ minWidth: 120, fontWeight: 600 }}
+            >
+              View Certificate
+            </a>
+          </Container>
+        </div>
       )}
 
       {/* Resource Modal */}

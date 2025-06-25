@@ -11,7 +11,7 @@ import 'swiper/css/autoplay';
 import { Autoplay, Pagination, Navigation } from 'swiper/modules';
 import './Home.css';
 
-const defaultThumbnail = 'https://i.postimg.cc/2yM5Xc24/20250613-1228-MERN-Stack-Mastery-simple-compose-01jxm18cdtfv4t59p18zc5pahx.png';
+const defaultThumbnail = 'https://i.postimg.cc/43Fp6cy7/20250625-1214-Default-Course-Thumbnail-simple-compose-01jyjx8d67fv3r7mnmt1cwgt4v.png';
 
 const bannerImages = [
   'https://u.cubeupload.com/ashishl/bannerforaco17506730.png',

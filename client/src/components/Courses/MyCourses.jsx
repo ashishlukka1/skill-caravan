@@ -6,6 +6,25 @@ import { AuthContext } from "../../context/AuthContext";
 import { FaClock, FaLayerGroup, FaUser, FaStar } from "react-icons/fa";
 import "./MyCourses.css";
 
+// --- Skeleton Loader for MyCourses Card ---
+const MyCourseCardSkeleton = () => (
+  <div className="modern-course-card">
+    <div className="course-img-wrap">
+      <div className="skeleton skeleton-img" />
+    </div>
+    <div className="course-card-body">
+      <div className="skeleton skeleton-title" />
+      <div className="skeleton skeleton-desc" />
+      <div className="course-stats" style={{ marginBottom: 8 }}>
+        <div className="skeleton skeleton-stat" />
+        <div className="skeleton skeleton-stat" />
+        <div className="skeleton skeleton-stat" />
+      </div>
+      <div className="skeleton skeleton-btn" />
+    </div>
+  </div>
+);
+
 const EmptyState = ({ message }) => (
   <Col key="empty-state" xs={12}>
     <div className="text-center text-muted py-5">
@@ -48,6 +67,7 @@ const CourseCard = ({ enrollment }) => {
           src={course.thumbnail || "https://via.placeholder.com/320x180?text=Course"}
           alt={course.title}
           className="course-img"
+          loading="lazy"
         />
         {course.difficulty && (
           <Badge
@@ -89,7 +109,7 @@ const CourseCard = ({ enrollment }) => {
         </div>
         <div className="course-footer">
           <div className="course-rating">
-            <div className="stars">
+            {/* <div className="stars">
               {renderStars(course.averageRating)}
             </div>
             <span className="rating-text">
@@ -97,7 +117,7 @@ const CourseCard = ({ enrollment }) => {
             </span>
             <span className="rating-count">
               ({course.ratings?.length || 0})
-            </span>
+            </span> */}
           </div>
           <div className="course-action">
             <Link
@@ -126,7 +146,23 @@ function MyCourses() {
       setLoading(true);
       setError(null);
       try {
-        const res = await axios.get("/api/users/enrollments");
+        // Only fetch summary fields for the card
+        const res = await axios.get("/api/users/enrollments?fields=course.title,course.thumbnail,course.difficulty,course.duration,course.units,course.studentsEnrolled,course.averageRating,course.ratings,progress");
+        // If your backend doesn't support ?fields=, just filter on frontend:
+        // setEnrollments(res.data.map(e => ({
+        //   ...e,
+        //   course: e.course && {
+        //     _id: e.course._id,
+        //     title: e.course.title,
+        //     thumbnail: e.course.thumbnail,
+        //     difficulty: e.course.difficulty,
+        //     duration: e.course.duration,
+        //     units: e.course.units,
+        //     studentsEnrolled: e.course.studentsEnrolled,
+        //     averageRating: e.course.averageRating,
+        //     ratings: e.course.ratings,
+        //   }
+        // })));
         setEnrollments(res.data);
       } catch (err) {
         setError(err.response?.data?.message || "Failed to fetch your courses.");
@@ -142,7 +178,6 @@ function MyCourses() {
     return enrollments.filter((enr) => {
       // Filter out enrollments with missing course data
       if (!enr.course) return false;
-      
       if (activeTab === "all") return true;
       if (activeTab === "completed") return (enr.progress || 0) === 100;
       if (activeTab === "inprogress") return (enr.progress || 0) < 100;
@@ -162,14 +197,49 @@ function MyCourses() {
 
   if (loading) {
     return (
-      <div className="mycourses-page">
-        <Container fluid className="mycourses-container">
-          <div className="text-center py-5">
-            <Spinner animation="border" variant="primary" />
-          </div>
-        </Container>
-      </div>
-    );
+  <div className="mycourses-page">
+    <Container fluid className="mycourses-container">
+      <Nav variant="pills" activeKey={activeTab} onSelect={setActiveTab} className="mb-4">
+        <Nav.Item>
+          <Nav.Link eventKey="inprogress">In Progress</Nav.Link>
+        </Nav.Item>
+        <Nav.Item>
+          <Nav.Link eventKey="completed">Completed</Nav.Link>
+        </Nav.Item>
+        <Nav.Item>
+          <Nav.Link eventKey="all">View All</Nav.Link>
+        </Nav.Item>
+      </Nav>
+
+      {error && <Alert variant="danger">{error}</Alert>}
+
+      <Row>
+        {loading
+          ? Array.from({ length: 4 }).map((_, idx) => (
+              <Col key={idx} lg={3} md={4} sm={6} xs={12} className="mb-4">
+                <MyCourseCardSkeleton />
+              </Col>
+            ))
+          : filteredEnrollments.length === 0 ? (
+              <EmptyState message={emptyStateMessage} />
+            ) : (
+              filteredEnrollments.map((enrollment) => (
+                <Col
+                  key={enrollment.course._id}
+                  lg={3}
+                  md={4}
+                  sm={6}
+                  xs={12}
+                  className="mb-4"
+                >
+                  <CourseCard enrollment={enrollment} />
+                </Col>
+              ))
+            )}
+      </Row>
+    </Container>
+  </div>
+);
   }
 
   const filteredEnrollments = getFilteredEnrollments();
@@ -201,12 +271,12 @@ function MyCourses() {
             <EmptyState message={emptyStateMessage} />
           ) : (
             filteredEnrollments.map((enrollment) => (
-              <Col 
+              <Col
                 key={enrollment.course._id}
-                lg={3} 
-                md={4} 
-                sm={6} 
-                xs={12} 
+                lg={3}
+                md={4}
+                sm={6}
+                xs={12}
                 className="mb-4"
               >
                 <CourseCard enrollment={enrollment} />

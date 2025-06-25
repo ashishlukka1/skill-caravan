@@ -1,18 +1,92 @@
 .edit-course-container {
   padding: 2rem 0;
+  background-color: #f8f9fa;
 }
 
+.form-control, .form-select {
+  border-radius: 0.25rem;
+}
+
+/* Card and form styling */
+.card {
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+  border: none;
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+/* Buttons and action areas */
 .action-buttons {
   display: flex;
   gap: 1rem;
   justify-content: flex-end;
+  margin-bottom: 1.5rem;
 }
 
-.unit-section {
+
+
+.btn-outline-primary, .btn-outline-success, .btn-outline-danger, .btn-outline-secondary {
+  border-width: 1px;
+}
+
+.btn-outline-primary:hover, .btn-outline-success:hover, .btn-outline-danger:hover, .btn-outline-secondary:hover {
+  color: #fff;
+}
+
+/* Accordion improvements */
+.accordion {
+  border-radius: 0.5rem;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.accordion-item {
   border: 1px solid #dee2e6;
   border-radius: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.accordion-header {
+  background-color: #f8f9fa;
+  border-radius: 0.25rem;
+}
+
+.accordion-button {
+  font-weight: 600;
+  color: #212529;
+  background-color: #f8f9fa;
+  border: none;
+  transition: background-color 0.2s;
+}
+
+.accordion-button:not(.collapsed) {
+  background-color: #e9ecef;
+  color: #212529;
+  box-shadow: none;
+}
+
+.accordion-button:focus {
+  box-shadow: none;
+  border-color: #dee2e6;
+}
+
+.accordion-body {
+  background-color: #fff;
   padding: 1rem;
+}
+
+/* Unit and lesson sections */
+.unit-section {
+  background-color: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 0.5rem;
+  padding: 1.25rem;
   margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .unit-header {
@@ -20,35 +94,142 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+  background-color: #f8f9fa;
+  padding: 0.75rem 1rem;
+  border-radius: 0.25rem;
 }
 
 .section-title {
   border-bottom: 2px solid #e9ecef;
   padding-bottom: 0.5rem;
   margin: 1.5rem 0 1rem;
+  font-weight: 600;
+  color: #495057;
 }
 
-.lesson-item,
-.question-item {
-  background: #f8f9fa;
+/* Lesson and question items */
+.lesson-item, .question-item {
+  background: #fff;
   border: 1px solid #dee2e6;
-  border-radius: 0.25rem;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  transition: box-shadow 0.2s;
+}
+
+.lesson-item:hover, .question-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Resources section */
+.resources-section {
+  background-color: #f8f9fa;
+  border-radius: 0.5rem;
   padding: 1rem;
   margin-bottom: 1rem;
 }
 
+.resource-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 0.25rem;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.resource-item:hover {
+  background-color: #e9ecef;
+}
+
+.resource-title {
+  flex-grow: 1;
+}
+
+.btn-remove {
+  border: none;
+  background: transparent;
+  color: #dc3545;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: background-color 0.2s;
+}
+
+.btn-remove:hover {
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+.resources-empty {
+  text-align: center;
+  color: #6c757d;
+  padding: 1rem;
+}
+
+/* User results */
 .user-results {
   max-height: 200px;
   overflow-y: auto;
   border: 1px solid #dee2e6;
-  border-radius: 0.25rem;
+  border-radius: 0.5rem;
+  background-color: #fff;
+  margin-bottom: 1rem;
 }
 
 .user-result-item {
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid #dee2e6;
+  transition: background-color 0.2s;
+}
+
+.user-result-item:hover {
+  background-color: #f8f9fa;
 }
 
 .user-result-item:last-child {
   border-bottom: none;
+}
+
+/* Form groups and labels */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-label {
+  font-weight: 500;
+  color: #495057;
+  margin-bottom: 0.25rem;
+}
+
+/* Thumbnail and certificate preview */
+.thumbnail-preview {
+  max-width: 200px;
+  max-height: 120px;
+  border-radius: 0.25rem;
+  border: 1px solid #dee2e6;
+  margin-top: 0.5rem;
+}
+
+.certificate-preview {
+  max-width: 300px;
+  max-height: 120px;
+  border-radius: 0.25rem;
+  border: 1px solid #dee2e6;
+  margin: 0.5rem 0;
+}
+
+/* Alerts */
+.alert {
+  border-radius: 0.5rem;
+}
+
+/* Resource form */
+.resource-form {
+  background-color: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
 }

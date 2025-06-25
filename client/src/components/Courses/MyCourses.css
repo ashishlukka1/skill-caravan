@@ -96,9 +96,7 @@
   text-decoration: none;
 }
 
-.course-title a:hover {
-  color: #4f46e5;
-}
+
 
 .course-desc {
   color: #6b7280;
@@ -208,14 +206,6 @@
   display: flex;
 }
 
-.action-btn {
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 6px 16px;
-  border-radius: 16px;
-  border: none;
-  min-width: 70px;
-}
 
 .action-btn:hover {
   transform: translateY(-1px);
@@ -333,12 +323,7 @@
   margin-bottom: 1rem;
 }
   
-/* Improve card accessibility */
-.course-title a:focus {
-  outline: 2px solid #4f46e5;
-  outline-offset: 2px;
-  border-radius: 4px;
-}
+
 
 /* Improve loading state */
 .loading-spinner {
@@ -351,11 +336,7 @@
   outline-offset: 2px;
 }
 
-/* Add hover effects for interactive elements */
-.action-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
+
 
 .course-title a:hover {
   color: #4f46e5;

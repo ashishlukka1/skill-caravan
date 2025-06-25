@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Moveable from "react-moveable";
 import axios from "../../utils/axios";
-import { Button, Form, Card, Alert } from "react-bootstrap";
+import { Button, Form, Card, Alert, Row, Col,Toast, ToastContainer } from "react-bootstrap";
 
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
@@ -70,6 +70,48 @@ const initialFields = [
   },
 ];
 
+const TopRightAlert = ({ show, variant, message, onClose }) => {
+  const iconMap = {
+    success: <span className="me-2" style={{ fontWeight: 700 }}>✔️</span>,
+    error: <span className="me-2" style={{ fontWeight: 700 }}>❌</span>,
+    info: <span className="me-2" style={{ fontWeight: 700 }}>ℹ️</span>,
+  };
+  const backgroundMap = {
+    success: "#4CAF50",
+    error: "#F44336",
+    info: "#2196F3",
+  };
+  return (
+    <ToastContainer position="top-end" className="p-3" style={{ zIndex: 1060 }}>
+      <Toast
+        show={show}
+        onClose={onClose}
+        delay={4000}
+        autohide
+        style={{
+          backgroundColor: backgroundMap[variant],
+          border: "none",
+          borderRadius: "12px",
+          minWidth: "300px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+        }}
+      >
+        <Toast.Body className="d-flex align-items-center justify-content-between text-white p-3">
+          <div className="d-flex align-items-center">
+            {iconMap[variant]}
+            <span style={{ fontSize: "14px", fontWeight: "500" }}>{message}</span>
+          </div>
+          <span
+            className="ms-3"
+            style={{ cursor: "pointer", fontSize: "16px" }}
+            onClick={onClose}
+          >×</span>
+        </Toast.Body>
+      </Toast>
+    </ToastContainer>
+  );
+};
+
 const AdminUniversalCertificate = () => {
   const [template, setTemplate] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
@@ -83,6 +125,10 @@ const AdminUniversalCertificate = () => {
   const [existingTemplateUrl, setExistingTemplateUrl] = useState("");
   const imgRef = useRef();
   const fieldRefs = useRef([]);
+
+    const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [showErrorAlert, setShowErrorAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
 
   // Convert px to percent
   const pxToPercent = (val, total) => (val / total) * 100;
@@ -99,7 +145,6 @@ const AdminUniversalCertificate = () => {
           setExistingTemplateUrl(res.data.templateUrl);
         }
         if (res.data.textSettings) {
-          // If backend is already using percent-based boxes, convert to px for UI
           const { nameBox, courseBox, dateBox, qrBox, font: f } = res.data.textSettings;
           if (nameBox && courseBox && dateBox && qrBox) {
             setFields([
@@ -185,62 +230,61 @@ const AdminUniversalCertificate = () => {
   };
 
   // Submit universal certificate template and settings
-  // ...existing code...
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  setError("");
-  setSuccess("");
-  try {
-    const formData = new FormData();
-    if (template) {
-      formData.append("template", template); // File object
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccess("");
+    try {
+      const formData = new FormData();
+      if (template) {
+        formData.append("template", template); // File object
+      }
+      // Convert all fields to percent before sending
+      const textSettings = {
+        nameBox: {
+          x: pxToPercent(fields[0].x, CANVAS_WIDTH),
+          y: pxToPercent(fields[0].y, CANVAS_HEIGHT),
+          width: pxToPercent(fields[0].width, CANVAS_WIDTH),
+          height: pxToPercent(fields[0].height, CANVAS_HEIGHT),
+        },
+        courseBox: {
+          x: pxToPercent(fields[1].x, CANVAS_WIDTH),
+          y: pxToPercent(fields[1].y, CANVAS_HEIGHT),
+          width: pxToPercent(fields[1].width, CANVAS_WIDTH),
+          height: pxToPercent(fields[1].height, CANVAS_HEIGHT),
+        },
+        dateBox: {
+          x: pxToPercent(fields[2].x, CANVAS_WIDTH),
+          y: pxToPercent(fields[2].y, CANVAS_HEIGHT),
+          width: pxToPercent(fields[2].width, CANVAS_WIDTH),
+          height: pxToPercent(fields[2].height, CANVAS_HEIGHT),
+        },
+        qrBox: {
+          x: pxToPercent(fields[3].x, CANVAS_WIDTH),
+          y: pxToPercent(fields[3].y, CANVAS_HEIGHT),
+          width: pxToPercent(fields[3].width, CANVAS_WIDTH),
+          height: pxToPercent(fields[3].height, CANVAS_HEIGHT),
+        },
+        font,
+      };
+      formData.append("textSettings", JSON.stringify(textSettings));
+      await axios.post("/api/courses/universal", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setAlertMessage("Universal certificate template updated!");
+      setShowSuccessAlert(true);
+      if (template) {
+        setExistingTemplateUrl(previewUrl);
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || "Failed to update universal certificate";
+      setAlertMessage(msg);
+      setShowErrorAlert(true);
+    } finally {
+      setLoading(false);
     }
-    // Convert all fields to percent before sending
-    const textSettings = {
-      nameBox: {
-        x: pxToPercent(fields[0].x, CANVAS_WIDTH),
-        y: pxToPercent(fields[0].y, CANVAS_HEIGHT),
-        width: pxToPercent(fields[0].width, CANVAS_WIDTH),
-        height: pxToPercent(fields[0].height, CANVAS_HEIGHT),
-      },
-      courseBox: {
-        x: pxToPercent(fields[1].x, CANVAS_WIDTH),
-        y: pxToPercent(fields[1].y, CANVAS_HEIGHT),
-        width: pxToPercent(fields[1].width, CANVAS_WIDTH),
-        height: pxToPercent(fields[1].height, CANVAS_HEIGHT),
-      },
-      dateBox: {
-        x: pxToPercent(fields[2].x, CANVAS_WIDTH),
-        y: pxToPercent(fields[2].y, CANVAS_HEIGHT),
-        width: pxToPercent(fields[2].width, CANVAS_WIDTH),
-        height: pxToPercent(fields[2].height, CANVAS_HEIGHT),
-      },
-      qrBox: {
-        x: pxToPercent(fields[3].x, CANVAS_WIDTH),
-        y: pxToPercent(fields[3].y, CANVAS_HEIGHT),
-        width: pxToPercent(fields[3].width, CANVAS_WIDTH),
-        height: pxToPercent(fields[3].height, CANVAS_HEIGHT),
-      },
-      font,
-    };
-    formData.append("textSettings", JSON.stringify(textSettings));
-    await axios.post("/api/courses/universal", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    setSuccess("Universal certificate template updated!");
-    if (template) {
-      setExistingTemplateUrl(previewUrl);
-    }
-  } catch (err) {
-    setError(
-      err.response?.data?.message || "Failed to update universal certificate"
-    );
-  } finally {
-    setLoading(false);
-  }
-};
-// ...existing code...
+  };
 
   const resetFormatting = () => {
     setFont(defaultFont);
@@ -286,11 +330,22 @@ const handleSubmit = async (e) => {
 
   return (
     <div className="container py-4 mt-5">
+      <TopRightAlert
+        show={showSuccessAlert}
+        variant="success"
+        message={alertMessage}
+        onClose={() => setShowSuccessAlert(false)}
+      />
+      <TopRightAlert
+        show={showErrorAlert}
+        variant="error"
+        message={alertMessage}
+        onClose={() => setShowErrorAlert(false)}
+      />  
       <Card className="mt-3">
         <Card.Body>
-          <h4>Certificate Template Designer</h4>
           <div className="mb-3">
-            <Form.Label>Zoom: {Math.round(zoom * 100)}%</Form.Label>
+            <Form.Label className="me-2">Zoom: {Math.round(zoom * 100)}%</Form.Label>
             <Form.Range
               min={0.5}
               max={2}
@@ -298,237 +353,249 @@ const handleSubmit = async (e) => {
               value={zoom}
               onChange={e => setZoom(Number(e.target.value))}
               style={{ width: 200 }}
+              className="pt-2"
             />
           </div>
-          <div className="d-flex flex-wrap">
-            <div style={{ flex: 2, minWidth: 350 }}>
+          <Row className="g-4">
+            <Col xs={12} md={7} lg={8}>
               <div
+                className="certificate-canvas-wrap"
                 style={{
                   position: "relative",
-                  width: CANVAS_WIDTH * zoom,
-                  height: CANVAS_HEIGHT * zoom,
-                  margin: "auto",
-                  border: "1px solid #ddd",
-                  background: "#fafafa",
-                  overflow: "hidden",
-                  boxShadow: "0 2px 12px #0001",
-                  userSelect: "none",
+                  width: "100%",
+                  maxWidth: CANVAS_WIDTH * zoom,
+                  margin: "0 auto",
+                  overflowX: "auto",
                 }}
-                onClick={() => setSelectedField(null)}
               >
-                {/* Render the image as a background layer */}
-                {(previewUrl || existingTemplateUrl) && (
-                  <img
-                    src={previewUrl || existingTemplateUrl}
-                    alt="Certificate Template"
-                    ref={imgRef}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "contain",
-                      pointerEvents: "none",
-                      userSelect: "none",
-                      position: "absolute",
-                      left: 0,
-                      top: 0,
-                      zIndex: 0,
-                    }}
-                    draggable={false}
-                  />
-                )}
-                {/* Render text fields above the image */}
-                {fields.map((field, idx) => (
-                  <React.Fragment key={field.key}>
-                    <div
-                      ref={el => (fieldRefs.current[idx] = el)}
-                      style={getFieldStyle(field)}
-                      onClick={e => {
-                        e.stopPropagation();
-                        setSelectedField(field.key);
+                <div
+                  style={{
+                    position: "relative",
+                    width: CANVAS_WIDTH * zoom,
+                    height: CANVAS_HEIGHT * zoom,
+                    margin: "auto",
+                    border: "1px solid #ddd",
+                    background: "#fafafa",
+                    overflow: "hidden",
+                    boxShadow: "0 2px 12px #0001",
+                    userSelect: "none",
+                  }}
+                  onClick={() => setSelectedField(null)}
+                >
+                  {(previewUrl || existingTemplateUrl) && (
+                    <img
+                      src={previewUrl || existingTemplateUrl}
+                      alt="Certificate Template"
+                      ref={imgRef}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "contain",
+                        pointerEvents: "none",
+                        userSelect: "none",
+                        position: "absolute",
+                        left: 0,
+                        top: 0,
+                        zIndex: 0,
                       }}
-                      onDoubleClick={e => {
-                        e.stopPropagation();
-                        setFields((prev) =>
-                          prev.map((f) =>
-                            f.key === field.key
-                              ? { ...f, editing: true }
-                              : { ...f, editing: false }
-                          )
-                        );
-                      }}
-                    >
-                      {field.editing ? (
-                        <textarea
-                          autoFocus
-                          value={field.text}
-                          onChange={e =>
-                            handleEditText(field.key, e.target.value)
-                          }
-                          onBlur={() =>
-                            setFields(prev =>
-                              prev.map(f =>
-                                f.key === field.key
-                                  ? { ...f, editing: false }
-                                  : f
-                              )
+                      draggable={false}
+                    />
+                  )}
+                  {fields.map((field, idx) => (
+                    <React.Fragment key={field.key}>
+                      <div
+                        ref={el => (fieldRefs.current[idx] = el)}
+                        style={getFieldStyle(field)}
+                        onClick={e => {
+                          e.stopPropagation();
+                          setSelectedField(field.key);
+                        }}
+                        onDoubleClick={e => {
+                          e.stopPropagation();
+                          setFields((prev) =>
+                            prev.map((f) =>
+                              f.key === field.key
+                                ? { ...f, editing: true }
+                                : { ...f, editing: false }
                             )
-                          }
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            background: "transparent",
-                            border: "none",
-                            outline: "none",
-                            fontFamily: font.family,
-                            fontSize: font[field.fontSizeKey] * zoom,
-                            color: font.color,
-                            fontWeight: "bold",
-                            textAlign: "center",
-                            resize: "none",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
+                          );
+                        }}
+                      >
+                        {field.editing ? (
+                          <textarea
+                            autoFocus
+                            value={field.text}
+                            onChange={e =>
+                              handleEditText(field.key, e.target.value)
+                            }
+                            onBlur={() =>
+                              setFields(prev =>
+                                prev.map(f =>
+                                  f.key === field.key
+                                    ? { ...f, editing: false }
+                                    : f
+                                )
+                              )
+                            }
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              background: "transparent",
+                              border: "none",
+                              outline: "none",
+                              fontFamily: font.family,
+                              fontSize: font[field.fontSizeKey] * zoom,
+                              color: font.color,
+                              fontWeight: "bold",
+                              textAlign: "center",
+                              resize: "none",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          />
+                        ) : (
+                          <span
+                            style={{
+                              width: "100%",
+                              textAlign: "center",
+                              whiteSpace: "pre-line",
+                              pointerEvents: "none",
+                            }}
+                          >
+                            {field.text}
+                          </span>
+                        )}
+                      </div>
+                      {selectedField === field.key && (
+                        <Moveable
+                          target={fieldRefs.current[idx]}
+                          origin={false}
+                          edge={false}
+                          draggable={true}
+                          resizable={true}
+                          throttleDrag={0}
+                          throttleResize={0}
+                          keepRatio={false}
+                          onDrag={({ left, top }) => {
+                            window.requestAnimationFrame(() => {
+                              updateField(field.key, {
+                                x: Math.round(left / zoom),
+                                y: Math.round(top / zoom),
+                              });
+                            });
+                          }}
+                          onResize={({ width, height, drag }) => {
+                            window.requestAnimationFrame(() => {
+                              updateField(field.key, {
+                                width: Math.max(60, width / zoom),
+                                height: Math.max(30, height / zoom),
+                                x: Math.round(drag.left / zoom),
+                                y: Math.round(drag.top / zoom),
+                              });
+                            });
+                          }}
+                          renderDirections={["nw", "ne", "sw", "se"]}
+                          padding={{ left: 0, top: 0, right: 0, bottom: 0 }}
+                          snappable={true}
+                          snapThreshold={5}
+                          bounds={{
+                            left: 0,
+                            top: 0,
+                            right: CANVAS_WIDTH * zoom,
+                            bottom: CANVAS_HEIGHT * zoom,
                           }}
                         />
-                      ) : (
-                        <span
-                          style={{
-                            width: "100%",
-                            textAlign: "center",
-                            whiteSpace: "pre-line",
-                            pointerEvents: "none",
-                          }}
-                        >
-                          {field.text}
-                        </span>
                       )}
+                    </React.Fragment>
+                  ))}
+                </div>
+                <div className="text-center mt-2">
+                  <small>
+                    Drag, resize, and double-click to edit each text box.<br />
+                    Only User Name, Course Name, Awarded Date, and QR fields are available.
+                  </small>
+                </div>
+              </div>
+            </Col>
+            <Col xs={12} md={5} lg={4}>
+              <div className="certificate-sidebar">
+                <h6>Text Field Design</h6>
+                {selectedField && (() => {
+                  const field = fields.find(f => f.key === selectedField);
+                  if (!field) return null;
+                  return (
+                    <div className="mb-3 p-2 border rounded bg-light">
+                      <h6 className="mb-2">{field.label} Box</h6>
+                      <Form.Group className="mb-2">
+                        <Form.Label>Font Family</Form.Label>
+                        <Form.Select
+                          value={font.family}
+                          onChange={e =>
+                            handleFieldStyle(field.key, "family", e.target.value)
+                          }
+                        >
+                          {fontFamilies.map(f => (
+                            <option key={f}>{f}</option>
+                          ))}
+                        </Form.Select>
+                      </Form.Group>
+                      <Form.Group className="mb-2">
+                        <Form.Label>Font Size</Form.Label>
+                        <Form.Range
+                          min={10}
+                          max={100}
+                          value={font[field.fontSizeKey]}
+                          onChange={e =>
+                            handleFieldStyle(
+                              field.key,
+                              field.fontSizeKey,
+                              Number(e.target.value)
+                            )
+                          }
+                        />
+                        <span>{font[field.fontSizeKey]}px</span>
+                      </Form.Group>
+                      <Form.Group className="mb-2">
+                        <Form.Label>Font Color</Form.Label>
+                        <Form.Control
+                          type="color"
+                          value={font.color}
+                          onChange={e =>
+                            handleFieldStyle(field.key, "color", e.target.value)
+                          }
+                        />
+                        <span className="ms-2">{font.color}</span>
+                      </Form.Group>
                     </div>
-                    {selectedField === field.key && (
-                      <Moveable
-                        target={fieldRefs.current[idx]}
-                        origin={false}
-                        edge={false}
-                        draggable={true}
-                        resizable={true}
-                        throttleDrag={0}
-                        throttleResize={0}
-                        keepRatio={false}
-                        onDrag={({ left, top }) => {
-                          window.requestAnimationFrame(() => {
-                            updateField(field.key, {
-                              x: Math.round(left / zoom),
-                              y: Math.round(top / zoom),
-                            });
-                          });
-                        }}
-                        onResize={({ width, height, drag }) => {
-                          window.requestAnimationFrame(() => {
-                            updateField(field.key, {
-                              width: Math.max(60, width / zoom),
-                              height: Math.max(30, height / zoom),
-                              x: Math.round(drag.left / zoom),
-                              y: Math.round(drag.top / zoom),
-                            });
-                          });
-                        }}
-                        renderDirections={["nw", "ne", "sw", "se"]}
-                        padding={{ left: 0, top: 0, right: 0, bottom: 0 }}
-                        snappable={true}
-                        snapThreshold={5}
-                        bounds={{
-                          left: 0,
-                          top: 0,
-                          right: CANVAS_WIDTH * zoom,
-                          bottom: CANVAS_HEIGHT * zoom,
-                        }}
-                      />
-                    )}
-                  </React.Fragment>
-                ))}
+                  );
+                })()}
+                <Form onSubmit={handleSubmit}>
+                  <Form.Group className="mb-2">
+                    <Form.Label>Certificate Template (Image Only)</Form.Label>
+                    <Form.Control
+                      type="file"
+                      accept="image/*,application/pdf"
+                      onChange={handleTemplateChange}
+                    />
+                  </Form.Group>
+                  {error && <Alert variant="danger">{error}</Alert>}
+                  {success && <Alert variant="success">{success}</Alert>}
+                  <Button
+                    variant="danger"
+                    className="mt-2 mb-2 me-2"
+                    onClick={resetFormatting}
+                    type="button"
+                  >
+                    Reset Formatting
+                  </Button>
+                  <Button type="submit" variant="primary" disabled={loading}>
+                    {loading ? "Uploading..." : "Upload & Save"}
+                  </Button>
+                </Form>
               </div>
-              <div className="text-center mt-2">
-                <small>
-                  Drag, resize, and double-click to edit each text box.<br />
-                  Only User Name, Course Name, Awarded Date, and QR fields are available.
-                </small>
-              </div>
-            </div>
-            <div style={{ flex: 1, minWidth: 250, marginLeft: 30 }}>
-              <h6>Text Field Design</h6>
-              {selectedField && (() => {
-                const field = fields.find(f => f.key === selectedField);
-                if (!field) return null;
-                return (
-                  <div className="mb-3 p-2 border rounded bg-light">
-                    <h6 className="mb-2">{field.label} Box</h6>
-                    <Form.Group className="mb-2">
-                      <Form.Label>Font Family</Form.Label>
-                      <Form.Select
-                        value={font.family}
-                        onChange={e =>
-                          handleFieldStyle(field.key, "family", e.target.value)
-                        }
-                      >
-                        {fontFamilies.map(f => (
-                          <option key={f}>{f}</option>
-                        ))}
-                      </Form.Select>
-                    </Form.Group>
-                    <Form.Group className="mb-2">
-                      <Form.Label>Font Size</Form.Label>
-                      <Form.Range
-                        min={10}
-                        max={100}
-                        value={font[field.fontSizeKey]}
-                        onChange={e =>
-                          handleFieldStyle(
-                            field.key,
-                            field.fontSizeKey,
-                            Number(e.target.value)
-                          )
-                        }
-                      />
-                      <span>{font[field.fontSizeKey]}px</span>
-                    </Form.Group>
-                    <Form.Group className="mb-2">
-                      <Form.Label>Font Color</Form.Label>
-                      <Form.Control
-                        type="color"
-                        value={font.color}
-                        onChange={e =>
-                          handleFieldStyle(field.key, "color", e.target.value)
-                        }
-                      />
-                      <span className="ms-2">{font.color}</span>
-                    </Form.Group>
-                  </div>
-                );
-              })()}
-              <Form onSubmit={handleSubmit}>
-                <Form.Group className="mb-2">
-                  <Form.Label>Certificate Template (Image Only)</Form.Label>
-                  <Form.Control
-                    type="file"
-                    accept="image/*,application/pdf"
-                    onChange={handleTemplateChange}
-                  />
-                </Form.Group>
-                {error && <Alert variant="danger">{error}</Alert>}
-                {success && <Alert variant="success">{success}</Alert>}
-                <Button
-                  variant="danger"
-                  className="mt-2 mb-2 me-2"
-                  onClick={resetFormatting}
-                  type="button"
-                >
-                  Reset Formatting
-                </Button>
-                <Button type="submit" variant="primary" disabled={loading}>
-                  {loading ? "Uploading..." : "Upload & Save"}
-                </Button>
-              </Form>
-            </div>
-          </div>
+            </Col>
+          </Row>
         </Card.Body>
       </Card>
     </div>

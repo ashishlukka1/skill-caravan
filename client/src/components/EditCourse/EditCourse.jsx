@@ -2,8 +2,46 @@ import React, { useState, useEffect } from "react";
 import { Container, Table, Button, Form, Spinner, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import axios from "../../utils/axios";
-import { FaEdit, FaUsers, FaBookOpen } from "react-icons/fa";
+import { FaEdit } from "react-icons/fa";
 import "./EditCourse.css";
+
+
+const TableSkeleton = ({ rows = 10 }) => (
+  <div className="table-responsive">
+    <table className="edit-courses-table table">
+      <thead className="courses-table-header">
+        <tr>
+          <th className="title-column">Title</th>
+          <th className="category-column">Category</th>
+          <th className="enrolled-column">Employees Enrolled</th>
+          <th className="created-column">Created</th>
+          <th className="actions-column">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {Array.from({ length: rows }).map((_, idx) => (
+          <tr key={idx}>
+            <td>
+              <div className="skeleton skeleton-title" style={{ width: "70%" }} />
+            </td>
+            <td>
+              <div className="skeleton skeleton-text" style={{ width: "60%" }} />
+            </td>
+            <td>
+              <div className="skeleton skeleton-text" style={{ width: "40%" }} />
+            </td>
+            <td>
+              <div className="skeleton skeleton-text" style={{ width: "50%" }} />
+            </td>
+            <td>
+              <div className="skeleton skeleton-btn" style={{ width: 60, height: 28 }} />
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
 
 const EditCourses = () => {
   const [courses, setCourses] = useState([]);
@@ -18,7 +56,7 @@ const EditCourses = () => {
         setLoading(true);
         setError("");
         const response = await axios.get("/api/courses");
-        setCourses(response.data);
+        setCourses(response.data.courses); // <-- updated here
       } catch (err) {
         setError("Error fetching courses.");
         setCourses([]);
@@ -45,9 +83,7 @@ const EditCourses = () => {
       </Form.Group>
 
       {loading ? (
-        <div className="loading-container">
-          <Spinner animation="border" />
-        </div>
+        <TableSkeleton rows={6} />
       ) : error ? (
         <Alert variant="danger">{error}</Alert>
       ) : (
@@ -55,18 +91,10 @@ const EditCourses = () => {
           <Table bordered className="edit-courses-table">
             <thead className="courses-table-header">
               <tr>
-                <th className="title-column">
-                  Title
-                </th>
-                <th className="category-column">
-                  Category
-                </th>
-                <th className="enrolled-column">
-                  Employees Enrolled
-                </th>
-                <th className="created-column">
-                  Created
-                </th>
+                <th className="title-column">Title</th>
+                <th className="category-column">Category</th>
+                <th className="enrolled-column">Employees Enrolled</th>
+                <th className="created-column">Created</th>
                 <th className="actions-column">Actions</th>
               </tr>
             </thead>

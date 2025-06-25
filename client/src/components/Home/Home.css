@@ -100,10 +100,7 @@
   font-size: 0.875rem;
 }
 
-/* Horizontal Courses Section */
-.horizontal-courses-section {
-  margin-bottom: 3rem;
-}
+
 
 .horizontal-section-header {
   display: flex;
@@ -384,7 +381,7 @@
 @media (max-width: 1300px) {
   .dashboard-container {
     max-width: 1300px;
-    padding: 2rem 1rem;
+    padding: 2rem 1rem 0rem 1rem;
   }
   .dashboard-content {
     padding: 0rem 1rem;
@@ -402,7 +399,7 @@
     max-width: 1200px;
   }
   .dashboard-content{
-    padding: 2rem 0rem;
+    padding: 2rem 0rem 0rem 0rem;
   }
 }
 
