@@ -70,6 +70,8 @@ const ResourceModal = ({ resource, show, onHide }) => {
   );
 };
 
+const MAX_VIDEO_SIZE_MB = 100;
+const MAX_DOC_SIZE_MB = 10;
 
 const ResourceForm = ({ unitIndex, lessonIndex, onSubmit, onCancel }) => {
   const [type, setType] = useState("video_url");
@@ -77,6 +79,27 @@ const ResourceForm = ({ unitIndex, lessonIndex, onSubmit, onCancel }) => {
   const [url, setUrl] = useState("");
   const [file, setFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fileError, setFileError] = useState("");
+
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    setFileError("");
+    if (!selectedFile) {
+      setFile(null);
+      return;
+    }
+    if (type === "video_file" && selectedFile.size > MAX_VIDEO_SIZE_MB * 1024 * 1024) {
+      setFileError(`Video file size must be less than ${MAX_VIDEO_SIZE_MB}MB`);
+      setFile(null);
+      return;
+    }
+    if (type === "document" && selectedFile.size > MAX_DOC_SIZE_MB * 1024 * 1024) {
+      setFileError(`Document size must be less than ${MAX_DOC_SIZE_MB}MB`);
+      setFile(null);
+      return;
+    }
+    setFile(selectedFile);
+  };
 
   const handleResourceSubmit = async () => {
     if (
@@ -87,6 +110,10 @@ const ResourceForm = ({ unitIndex, lessonIndex, onSubmit, onCancel }) => {
       alert("Please fill all required fields.");
       return;
     }
+    if (fileError) {
+      alert(fileError);
+      return;
+    }
     setIsSubmitting(true);
     try {
       const formData = new FormData();
@@ -95,7 +122,7 @@ const ResourceForm = ({ unitIndex, lessonIndex, onSubmit, onCancel }) => {
       if (type === "video_url") {
         formData.append("url", url);
       } else {
-        formData.append("file", file); // <-- This is correct
+        formData.append("file", file);
       }
       await onSubmit(unitIndex, lessonIndex, formData);
       setTitle("");
@@ -115,10 +142,10 @@ const ResourceForm = ({ unitIndex, lessonIndex, onSubmit, onCancel }) => {
         <Col md={4}>
           <Form.Group>
             <Form.Label>Resource Type</Form.Label>
-            <Form.Select value={type} onChange={(e) => setType(e.target.value)}>
+            <Form.Select value={type} onChange={(e) => { setType(e.target.value); setFile(null); setFileError(""); }}>
               <option value="video_url">Video URL</option>
-              <option value="video_file">Video File</option>
-              <option value="document">Document(Limit: 10mb)</option>
+              <option value="video_file">Video File (Max Size: 100mb)</option>
+              <option value="document">Document (Max Size: 10mb)</option>
             </Form.Select>
           </Form.Group>
         </Col>
@@ -151,7 +178,7 @@ const ResourceForm = ({ unitIndex, lessonIndex, onSubmit, onCancel }) => {
               <Form.Label>File</Form.Label>
               <Form.Control
                 type="file"
-                onChange={(e) => setFile(e.target.files[0])}
+                onChange={handleFileChange}
                 accept={
                   type === "video_file"
                     ? "video/*"
@@ -159,6 +186,9 @@ const ResourceForm = ({ unitIndex, lessonIndex, onSubmit, onCancel }) => {
                 }
                 required
               />
+              {fileError && (
+                <div className="text-danger small mt-1">{fileError}</div>
+              )}
             </Form.Group>
           )}
         </Col>
