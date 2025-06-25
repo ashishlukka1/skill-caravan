@@ -2,18 +2,16 @@
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 2px 12px rgba(44, 62, 80, 0.07);
-
 }
 
 .quiz-content {
   max-width: 800px;
   margin: 0 auto;
-  
 }
 
 .quiz-question-block {
   margin-bottom: 2rem;
-    margin-left: 3rem;
+  margin-left: 3rem;
   margin-right: 3rem;
 }
 
@@ -179,7 +177,7 @@
   border-radius: 12px;
   box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
   margin-top: 3rem;
-    margin-left: 3rem;
+  margin-left: 3rem;
   margin-right: 3rem;
 }
 
@@ -389,7 +387,7 @@
 }
 
 .score-card {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border: none;
 }
 
@@ -416,7 +414,7 @@
 }
 
 .question-review-card {
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .question-review-card.border-success {
@@ -496,11 +494,101 @@
 .question-card {
   background: #f8f9fa;
   border: none;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .navigation-footer {
   border-top: 1px solid #dee2e6;
   padding-top: 1.5rem;
   margin-top: 2rem;
+}
+
+/* Responsive tweaks for assignment quiz */
+@media (max-width: 991.98px) {
+  .assignment-card {
+    margin-left: 1rem;
+    margin-right: 1rem;
+  }
+  .quiz-question-block {
+    margin-left: 1rem;
+    margin-right: 1rem;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .assignment-card {
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+    margin-top: 3rem;
+  }
+  .quiz-question-block {
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+  }
+  .score-circle {
+    width: 90px;
+    height: 90px;
+    font-size: 1rem;
+  }
+  .question-card {
+    padding: 1rem;
+  }
+  .options-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .assignment-card {
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 3rem;
+    border-radius: 0;
+  }
+  .score-circle {
+    width: 70px;
+    height: 70px;
+    font-size: 0.9rem;
+  }
+  .question-card {
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+  }
+  .options-grid {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  .review-question-block,
+  .review-question {
+    padding: 1rem;
+    border-radius: 0.5rem;
+  }
+}
+
+.navigation-footer,
+.question-dots {
+  flex-wrap: nowrap !important;
+  flex-direction: row !important;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@media (max-width: 767.98px) {
+  .navigation-footer {
+    flex-direction: row !important;
+    gap: 0.5rem;
+    padding-top: 1rem;
+    margin-top: 1.5rem;
+  }
+  .navigation-footer > * {
+    width: auto !important;
+    min-width: 90px;
+    margin-bottom: 0 !important;
+  }
+  .question-dots {
+    justify-content: center;
+    gap: 0.25rem;
+  }
 }

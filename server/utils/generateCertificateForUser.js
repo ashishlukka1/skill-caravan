@@ -55,13 +55,13 @@ async function generateCertificateForUser({ user, course }) {
   const font = textSettings.font || {};
 
   // Draw user name
-if (textSettings.dateBox) {
+if (textSettings.nameBox) {
   drawCenteredText(
-    awardedAt.toLocaleDateString(),
-    textSettings.dateBox,
+    user.name,
+    textSettings.nameBox,
     font.family || "Arial",
     font.color || "#000000",
-    font.dateSize || 32
+    font.nameSize || 32
   );
 }
 
