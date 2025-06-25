@@ -23,6 +23,7 @@ const Login = () => {
       if (res.data.token) {
         localStorage.setItem("token", res.data.token);
         setUser(res.data.user);
+        sessionStorage.setItem("user", JSON.stringify(res.data.user)); // <-- Add this line
         navigate("/");
       }
     } catch (err) {
@@ -56,7 +57,10 @@ const Login = () => {
       <div className="user-registration-form-side">
         <form className="user-registration-form" onSubmit={handleLogin}>
           <h4 className="text-center mb-2">Welcome Back</h4>
-          <p className="text-center mb-4 register-prompt" style={{ color: "#888", marginBottom: "1.5rem" }}>
+          <p
+            className="text-center mb-4 register-prompt"
+            style={{ color: "#888", marginBottom: "1.5rem" }}
+          >
             Sign in to continue
           </p>
           <div className="mb-3">
@@ -96,7 +100,7 @@ const Login = () => {
             <span className="register-prompt">
               No account?{" "}
               <Link to="/register" className="register-link">
-                Register  
+                Register
               </Link>
             </span>
           </div>

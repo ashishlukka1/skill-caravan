@@ -4,7 +4,11 @@ import axios from "../utils/axios";
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+
+  const [user, setUser] = useState(() => {
+    const stored = sessionStorage.getItem("user");
+    return stored ? JSON.parse(stored) : null;
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -16,13 +20,16 @@ export const AuthProvider = ({ children }) => {
             headers: { Authorization: `Bearer ${token}` },
           });
           setUser(res.data);
+          sessionStorage.setItem("user", JSON.stringify(res.data)); 
         } catch (err) {
           console.error("Auth check failed:", err);
           localStorage.removeItem("token");
           setUser(null);
+          sessionStorage.removeItem("user");
         }
       } else {
         setUser(null);
+        sessionStorage.removeItem("user");
       }
       setLoading(false);
     };
