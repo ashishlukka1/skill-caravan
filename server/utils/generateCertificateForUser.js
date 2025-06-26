@@ -38,7 +38,14 @@ async function generateCertificateForUser({ user, course }) {
   const ctx = canvas.getContext("2d");
   ctx.drawImage(image, 0, 0, image.width, image.height);
 
-  function drawCenteredText(text, box, fontFamily, color, baseFontSizePx, weight = "bold") {
+  function drawCenteredText(
+    text,
+    box,
+    fontFamily,
+    color,
+    baseFontSizePx,
+    weight = "bold"
+  ) {
     const x = percentToPixel(box.x + box.width / 2, image.width);
     const y = percentToPixel(box.y + box.height / 2, image.height);
     const fontSize = Math.max((baseFontSizePx / 600) * image.height, 10);
@@ -52,15 +59,15 @@ async function generateCertificateForUser({ user, course }) {
   const font = textSettings.font || {};
 
   // Draw user name
-if (textSettings.nameBox) {
-  drawCenteredText(
-    user.name,
-    textSettings.nameBox,
-    font.family || "Arial",
-    font.color || "#000000",
-    font.nameSize || 32
-  );
-}
+  if (textSettings.nameBox) {
+    drawCenteredText(
+      user.name,
+      textSettings.nameBox,
+      font.family || "Arial",
+      font.color || "#000000",
+      font.nameSize || 32
+    );
+  }
 
   // Draw course name
   if (textSettings.courseBox) {
@@ -86,12 +93,24 @@ if (textSettings.nameBox) {
 
   // Draw QR code (centered in box)
   if (textSettings.qrBox) {
-    const qrUrl = `${process.env.PUBLIC_URL || "https://localhost:5173"}/validate-certificate/${certId}`;
+    const qrUrl = `${
+      process.env.PUBLIC_URL || "https://localhost:5173"
+    }/validate-certificate/${certId}`;
     const qrSize = percentToPixel(textSettings.qrBox.width, image.width);
     const qrBuffer = await QRCode.toBuffer(qrUrl, { width: qrSize, margin: 0 });
     const qrImage = await loadImage(qrBuffer);
-    const qrX = percentToPixel(textSettings.qrBox.x + textSettings.qrBox.width / 2, image.width) - qrSize / 2;
-    const qrY = percentToPixel(textSettings.qrBox.y + textSettings.qrBox.height / 2, image.height) - qrSize / 2;
+    const qrX =
+      percentToPixel(
+        textSettings.qrBox.x + textSettings.qrBox.width / 2,
+        image.width
+      ) -
+      qrSize / 2;
+    const qrY =
+      percentToPixel(
+        textSettings.qrBox.y + textSettings.qrBox.height / 2,
+        image.height
+      ) -
+      qrSize / 2;
     ctx.drawImage(qrImage, qrX, qrY, qrSize, qrSize);
   }
 

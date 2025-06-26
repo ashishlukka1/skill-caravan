@@ -326,6 +326,7 @@ const AdminUniversalCertificate = () => {
     padding: 2,
     transition: "border 0.1s",
     userSelect: "none",
+    lineHeight : 1,
   });
 
   return (
@@ -469,19 +470,29 @@ const AdminUniversalCertificate = () => {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            lineHeight: 1,
           }}
         />
       ) : (
         <span
-          style={{
-            width: "100%",
-            textAlign: "center",
-            whiteSpace: "pre-line",
-            pointerEvents: "none",
-          }}
-        >
-          {field.text}
-        </span>
+  style={{
+    width: "100%",
+    height: "100%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    textAlign: "center",
+    whiteSpace: "pre-line",
+    pointerEvents: "none",
+    fontFamily: font.family,
+    fontSize: font[field.fontSizeKey] * zoom,
+    color: font.color,
+    fontWeight: "bold",
+    lineHeight: 1,
+  }}
+>
+  {field.text}
+</span>
       )}
     </div>
     {selectedField === field.key && (

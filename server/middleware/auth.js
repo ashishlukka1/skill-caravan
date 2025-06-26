@@ -73,9 +73,19 @@ const isInstructorOrAdmin = (req, res, next) => {
   res.status(403).json({ message: "Access denied. Instructor/Admin only." });
 };
 
+const isChecker = (req, res, next) => {
+  if (req.user.role === "checker" || req.user.role === "admin") {
+    return next();
+  }
+  return res.status(403).json({
+    message: "Access denied. Checker only.",
+  });
+};
+
 module.exports = {
   authMiddleware,
   isAdmin,
   isInstructor,
   isInstructorOrAdmin,
+  isChecker,
 };

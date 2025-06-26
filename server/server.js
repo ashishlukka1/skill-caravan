@@ -9,21 +9,22 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "http://localhost:3000",
-    "https://olive-skill-test.vercel.app"
-  ],
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  optionsSuccessStatus: 200
-}));
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:3000",
+      "https://olive-skill-test.vercel.app",
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    optionsSuccessStatus: 200,
+  })
+);
 
-
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 // Use morgan for concise request logging
 app.use(morgan("dev"));
@@ -35,12 +36,13 @@ app.use((req, res, next) => {
   }
   next();
 });
-mongoose.connect(process.env.MONGO_URI)
+mongoose
+  .connect(process.env.MONGO_URI)
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
 // Routes
-const authRoutes = require("./routes/auth"); 
+const authRoutes = require("./routes/auth");
 app.use("/api/auth", authRoutes);
 
 const userRoutes = require("./routes/User");
@@ -51,6 +53,9 @@ app.use("/api/courses", courseRoutes);
 
 const progressRoutes = require("./routes/Progress");
 app.use("/api/progress", progressRoutes);
+
+const checkerRoutes = require("./routes/Checker");
+app.use("/api/checker", checkerRoutes);
 
 app.get("/", (req, res) => {
   res.send("Server is running!");

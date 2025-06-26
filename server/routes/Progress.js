@@ -70,6 +70,7 @@ async function tryGenerateCertificate(user, course, enrollment) {
   }
 }
 
+// Route to issue certificate for a course after completion
 router.post(
   "/:courseId/issue-certificate",
   authMiddleware,
@@ -118,7 +119,7 @@ router.post(
   }
 );
 
-
+// Route to assign a random new assignment set for a course unit
 router.post(
   "/:courseId/unit/:unitIndex/assign-set",
   authMiddleware,
@@ -283,7 +284,7 @@ router.get("/:courseId", authMiddleware, async (req, res) => {
   }
 });
 
-// Add this route BEFORE the other routes
+// Route to update lesson progress
 router.post(
   "/:courseId/unit/:unitIndex/lesson/:lessonIndex",
   authMiddleware,
@@ -317,7 +318,11 @@ router.post(
       }
       const unit = enrollment.unitsProgress[unitIndex];
       if (!unit.lessonsCompleted) unit.lessonsCompleted = [];
-      for (let i = unit.lessonsCompleted.length; i < courseUnit.lessons.length; i++) {
+      for (
+        let i = unit.lessonsCompleted.length;
+        i < courseUnit.lessons.length;
+        i++
+      ) {
         unit.lessonsCompleted[i] = {
           lessonIndex: i,
           completed: false,

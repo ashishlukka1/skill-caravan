@@ -43,11 +43,11 @@ const courseSchema = new mongoose.Schema({
   ],
   certificate: {
     templateBase64: { type: String },
-  templateUrl: { type: String }, // Cloudinary URL
-  templateStoragePath: { type: String }, // Cloudinary public_id
+  templateUrl: { type: String },
+  templateStoragePath: { type: String },
   textSettings: {
     nameBox: {
-      x: { type: Number }, // percent (0-100)
+      x: { type: Number },
       y: { type: Number },
       width: { type: Number },
       height: { type: Number }
@@ -95,6 +95,20 @@ const courseSchema = new mongoose.Schema({
   published: {
     type: Boolean,
     default: false,
+  },
+  approvalStatus: {
+    type: String,
+    enum: ["pending", "approved", "rejected"],
+    default: "pending",
+  },
+  checker: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    default: null,
+  },
+  checkerFeedback: {
+    type: String,
+    default: "",
   },
   createdAt: {
     type: Date,

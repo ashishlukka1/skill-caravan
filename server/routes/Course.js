@@ -6,6 +6,7 @@ const {
   isInstructor,
   isInstructorOrAdmin,
   isAdmin,
+  isChecker
 } = require("../middleware/auth");
 const Course = require("../models/Course");
 const User = require("../models/User");
@@ -24,11 +25,10 @@ const upload = multer({
 });
 
 const getBase64 = (buffer, mimetype) => {
-  return `data:${mimetype};base64,${buffer.toString('base64')}`;
+  return `data:${mimetype};base64,${buffer.toString("base64")}`;
 };
 
-
-// --- UNIVERSAL CERTIFICATE GET ---
+// --- GET UNIVERSAL CERTIFICATE ---
 router.get("/universal", async (req, res) => {
   try {
     const cert = await UniversalCertificate.findOne();
@@ -85,38 +85,42 @@ router.get("/search", async (req, res) => {
   }
 });
 
-// --- TEST USER ---
-router.get("/test-user", authMiddleware, async (req, res) => {
+// --- GET ALL COURSES ---
+router.get("/", authMiddleware, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
-    res.json({ user });
-  } catch (err) {
-    res.status(500).json({ message: "User fetch failed", error: err.message });
-  }
-});
-
-// --- LIST ALL COURSES ---
-router.get("/", async (req, res) => {
-  try {
-    // Pagination support
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 12;
     const skip = (page - 1) * limit;
 
-    // Only select summary fields
-    const courses = await Course.find({}, "title thumbnail difficulty description createdAt studentsEnrolled averageRating certificate units category")
+    let filter = {};
+    const role = (req.user.role || "").toLowerCase();
+
+    if (role === "employee") {
+      filter = { approvalStatus: "approved", published: true };
+    } else if (role === "checker" || role === "admin" || role === "instructor") {
+      if (req.query.status === "approved") filter = { approvalStatus: "approved" };
+      else if (req.query.status === "rejected") filter = { approvalStatus: "rejected" };
+      // else see all
+    } else {
+      filter = { approvalStatus: "approved", published: true };
+    }
+
+    const courses = await Course.find(
+      filter,
+      "title thumbnail difficulty description createdAt studentsEnrolled averageRating certificate units category approvalStatus published checkerFeedback instructor"
+    )
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
 
-    const total = await Course.countDocuments();
+    const total = await Course.countDocuments(filter);
     res.json({ courses, total });
   } catch (err) {
     res.status(500).json({ message: "Error fetching courses" });
   }
 });
 
-// --- COURSE CATEGORIES ---
+// --- GET COURSE CATEGORIES ---
 router.get("/categories", async (req, res) => {
   res.json([
     "Web Development",
@@ -148,11 +152,14 @@ router.post(
         (e) => e.course.toString() === courseId
       );
 
-      if (!enrollment) return res.status(404).json({ message: "Not enrolled in this course" });
+      if (!enrollment)
+        return res.status(404).json({ message: "Not enrolled in this course" });
 
       const unitProgress = enrollment.unitsProgress[unitIndex];
       if (!unitProgress || !unitProgress.assignment) {
-        return res.status(404).json({ message: "Assignment not initialized for this unit" });
+        return res
+          .status(404)
+          .json({ message: "Assignment not initialized for this unit" });
       }
 
       const assignedSetNumber = unitProgress.assignment.assignedSetNumber;
@@ -330,9 +337,12 @@ router.post("/:id/enroll", authMiddleware, async (req, res) => {
     });
   } catch (err) {
     let status = 500;
-    if (err.message === "Course not found" || err.message === "User not found") status = 404;
+    if (err.message === "Course not found" || err.message === "User not found")
+      status = 404;
     if (err.message === "Already enrolled in this course") status = 400;
-    res.status(status).json({ message: err.message || "Error enrolling in course" });
+    res
+      .status(status)
+      .json({ message: err.message || "Error enrolling in course" });
   } finally {
     session.endSession();
   }
@@ -357,7 +367,10 @@ router.get("/:id", authMiddleware, async (req, res) => {
         ? course.instructor._id.toString() === user._id.toString()
         : course.instructor.toString() === user._id.toString());
 
-    if (!isEnrolled && !isAdminOrInstructor) {
+    // --- FIX: Allow checker to see full details ---
+    const isChecker = user.role === "checker";
+
+    if (!isEnrolled && !isAdminOrInstructor && !isChecker) {
       // Return only public info
       return res.json({
         _id: course._id,
@@ -431,13 +444,15 @@ router.post("/", authMiddleware, isInstructorOrAdmin, async (req, res) => {
       tags: req.body.tags || [],
       instructor: req.user._id,
       duration: 0,
-      units: safeUnits, // <-- Always use the processed units
+      units: safeUnits,
       certificate: universalCert
         ? {
             templateUrl: universalCert.templateUrl,
             textSettings: universalCert.textSettings,
           }
         : undefined,
+        approvalStatus: "pending",
+        published: false,
     };
 
     const course = new Course(courseData);
@@ -905,7 +920,7 @@ router.get("/validate-certificate/:certId", async (req, res) => {
   const enrollment = user.enrolledCourses.find(
     (e) => e.certificate?.certificateId === req.params.certId
   );
- res.json({
+  res.json({
     valid: true,
     userName: user.name,
     courseTitle: enrollment?.course?.title || "Course",
@@ -914,5 +929,9 @@ router.get("/validate-certificate/:certId", async (req, res) => {
     issuedAt: enrollment?.certificate?.issuedAt,
   });
 });
+
+
+
+
 
 module.exports = router;

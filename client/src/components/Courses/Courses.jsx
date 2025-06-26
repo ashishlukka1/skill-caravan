@@ -173,64 +173,86 @@ const CourseCard = ({
             />
           </div>
         )}
-        <div className="course-footer">
-          <div className="course-rating">
-            {/* You can add stars here if you want */}
+<div className="course-footer d-flex align-items-center justify-content-between">
+  <div className="course-status-badge">
+    {user?.role === "admin" ? (
+          <div className="course-status-badge">
+            <span
+              style={{
+                color:
+                  course.approvalStatus === "approved"
+                    ? "#4CAF50"
+                    : course.approvalStatus === "pending"
+                    ? "#FFA500"
+                    : "#F44336",
+                fontWeight: 600,
+                fontSize: "0.98em",
+                marginRight: 8,
+              }}
+            >
+              {course.approvalStatus &&
+                course.approvalStatus.charAt(0).toUpperCase() +
+                  course.approvalStatus.slice(1)}
+            </span>
           </div>
-          <div className="course-action">
-            {user?.role === "admin" ? (
-              <>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  className="action-btn me-2"
-                  onClick={() => onAssign(course)}
-                >
-                  Assign
-                </Button>
-                <Button
-                  variant="outline-primary"
-                  size="sm"
-                  className="btn-outline-primary action-btn"
-                  onClick={() => onEdit(course._id)}
-                >
-                  Edit
-                </Button>
-              </>
-            ) : user ? (
-              enrolled ? (
-                <Button
-                  variant="success"
-                  size="sm"
-                  className="action-btn"
-                  onClick={() => onResume(course._id)}
-                >
-                  {progress === 100 ? "Review" : "Continue"}
-                </Button>
-              ) : (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  className="action-btn"
-                  disabled={enrolling}
-                  onClick={() => onEnroll(course._id)}
-                >
-                  {enrolling ? "Enrolling..." : "Enroll"}
-                </Button>
-              )
-            ) : (
-              <Button
-                variant="outline-primary"
-                size="sm"
-                className="action-btn"
-                as={Link}
-                to="/login"
-              >
-                Login to Enroll
-              </Button>
-            )}
-          </div>
-        </div>
+        ) : (
+          <div />
+        )}
+  </div>
+  <div className="course-action">
+    {user?.role === "admin" ? (
+      <>
+        <Button
+          variant="primary"
+          size="sm"
+          className="action-btn me-2"
+          onClick={() => onAssign(course)}
+        >
+          Assign
+        </Button>
+        <Button
+          variant="outline-primary"
+          size="sm"
+          className="btn-outline-primary action-btn"
+          onClick={() => onEdit(course._id)}
+        >
+          Edit
+        </Button>
+      </>
+    ) : user ? (
+      enrolled ? (
+        <Button
+          variant="success"
+          size="sm"
+          className="action-btn"
+          onClick={() => onResume(course._id)}
+        >
+          {progress === 100 ? "Review" : "Continue"}
+        </Button>
+      ) : (
+        <Button
+          variant="primary"
+          size="sm"
+          className="action-btn"
+          disabled={enrolling}
+          onClick={() => onEnroll(course._id)}
+        >
+          {enrolling ? "Enrolling..." : "Enroll"}
+        </Button>
+      )
+    ) : (
+      <Button
+        variant="outline-primary"
+        size="sm"
+        className="action-btn"
+        as={Link}
+        to="/login"
+      >
+        Login to Enroll
+      </Button>
+    )}
+  </div>
+</div>
       </div>
     </div>
   );

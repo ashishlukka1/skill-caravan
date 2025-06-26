@@ -127,7 +127,7 @@ router.get("/:id/progress/:courseId", authMiddleware, async (req, res) => {
   }
 });
 
-// Add this after existing routes
+// Update course progress in user's enrollment
 router.patch(
   "/enrollments/:courseId/status",
   authMiddleware,
@@ -158,7 +158,5 @@ router.patch(
     }
   }
 );
-
-
 
 module.exports = router;

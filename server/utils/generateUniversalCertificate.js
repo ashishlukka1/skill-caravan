@@ -1,7 +1,12 @@
 const { createCanvas, loadImage } = require("canvas");
 const cloudinary = require("cloudinary").v2;
 
-async function generateAndUploadCertificate(templateUrl, textSettings, userName, uploadFolder) {
+async function generateAndUploadCertificate(
+  templateUrl,
+  textSettings,
+  userName,
+  uploadFolder
+) {
   const templateImage = await loadImage(templateUrl);
 
   const canvas = createCanvas(templateImage.width, templateImage.height);
@@ -31,7 +36,7 @@ async function generateAndUploadCertificate(templateUrl, textSettings, userName,
         folder: uploadFolder,
         resource_type: "image",
         format: "png",
-        public_id: `cert_${Date.now()}`
+        public_id: `cert_${Date.now()}`,
       },
       (error, result) => {
         if (error) return reject(error);

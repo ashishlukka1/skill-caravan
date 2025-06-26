@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BsSearch, BsBook, BsGear, BsBoxArrowRight, BsX, BsClock, BsStar } from 'react-icons/bs';
+import { BsSearch, BsBook, BsGear, BsBoxArrowRight, BsX } from 'react-icons/bs';
 import { PiCertificateLight } from "react-icons/pi";
 import { FiChevronDown } from 'react-icons/fi';
 import { AuthContext } from '../../context/AuthContext';
@@ -14,7 +14,7 @@ const Navbar = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  
+
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
   const searchRef = useRef(null);
@@ -52,7 +52,6 @@ const Navbar = () => {
       setSearchResults(data);
       setShowResults(true);
     } catch (err) {
-      console.error('Search error:', err);
       setSearchResults([]);
     } finally {
       setIsSearching(false);
@@ -83,48 +82,64 @@ const Navbar = () => {
     if (!query.trim()) return text;
     const regex = new RegExp(`(${query.trim()})`, 'gi');
     const parts = text.split(regex);
-    return parts.map((part, index) => 
-      regex.test(part) ? 
-        <span key={index} className="highlight">{part}</span> : 
+    return parts.map((part, index) =>
+      regex.test(part) ?
+        <span key={index} className="highlight">{part}</span> :
         part
     );
   };
 
-  const formatDuration = (minutes) => {
-    if (!minutes) return '';
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hours > 0) {
-      return `${hours}h ${mins}m`;
-    }
-    return `${mins}m`;
-  };
+  // Checker: Only logo and profile dropdown
+  if (user?.role === 'checker') {
+    return (
+      <nav className="navbar">
+        <div className="navbar-left">
+          <Link to="/" className="navbar-brand">
+            <img
+              src="https://storage.googleapis.com/skcn-prod-mb-public-tenants/logo/0b250aa2-3030-4772-98e7-a0c5938a771c.png"
+              alt="Logo"
+            />
+          </Link>
+        </div>
+        <div className="navbar-right">
+          <div className="profile-dropdown">
+            <button
+              ref={buttonRef}
+              className={`profile-button ${showDropdown ? 'active' : ''}`}
+              onClick={() => setShowDropdown((prev) => !prev)}
+              aria-haspopup="true"
+              aria-expanded={showDropdown}
+            >
+              <span className="profile-initial">{user?.name.charAt(0)}</span>
+              <FiChevronDown size={20} className={`dropdown-icon ${showDropdown ? 'rotated' : ''}`} />
+            </button>
+            <div
+              ref={dropdownRef}
+              className={`dropdown-menu ${showDropdown ? 'active' : ''}`}
+              style={{ display: showDropdown ? 'block' : 'none' }}
+            >
+              <div className="dropdown-profile">
+                <div className="fw-bold">{user.name}</div>
+                <div className="text-muted" style={{ fontSize: '0.9em' }}>{user.email}</div>
+              </div>
+              <div className="dropdown-divider" />
+              <Link to="/profile" className="dropdown-item" onClick={() => setShowDropdown(false)}>
+                <BsGear size={16} />
+                <span>Profile Settings</span>
+              </Link>
+              <div className="dropdown-divider" />
+              <button onClick={handleLogout} className="dropdown-item">
+                <BsBoxArrowRight size={16} />
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+    );
+  }
 
-  // Render navigation links for dropdown
-  const renderNavLinks = () => (
-    <>
-      <Link to="/" className="dropdown-item" onClick={() => setShowDropdown(false)}>
-        Home
-      </Link>
-      <Link to="/courses" className="dropdown-item" onClick={() => setShowDropdown(false)}>
-        Browse
-      </Link>
-      {user?.role === 'admin' && (
-        <>
-          <Link to="/add-course" className="dropdown-item" onClick={() => setShowDropdown(false)}>
-            Add Course
-          </Link>
-          <Link to="/edit-courses" className="dropdown-item" onClick={() => setShowDropdown(false)}>
-            Edit Courses
-          </Link>
-          <Link to="/universal-certificate" className="dropdown-item" onClick={() => setShowDropdown(false)}>
-            Edit Default Certificate
-          </Link>
-        </>
-      )}
-    </>
-  );
-
+  // Normal Navbar for other roles
   return (
     <nav className="navbar">
       <div className="navbar-left">
@@ -141,7 +156,6 @@ const Navbar = () => {
             <>
               <Link to="/add-course" className="ms-3">Add Course</Link>
               <Link to="/edit-courses" className="ms-3">Edit Courses</Link>
-              <Link to="/universal-certificate" className="ms-3">Edit Default Certificate</Link>
             </>
           )}
         </div>
@@ -158,9 +172,9 @@ const Navbar = () => {
               onFocus={() => searchQuery.trim() && setShowResults(true)}
             />
             {searchQuery && (
-              <button 
+              <button
                 type="button"
-                className="clear-search" 
+                className="clear-search"
                 onClick={() => {
                   setSearchQuery('');
                   setShowResults(false);
@@ -190,8 +204,8 @@ const Navbar = () => {
                     onClick={() => handleSearchSelect(course._id)}
                   >
                     <div className="result-thumbnail">
-                      <img 
-                        src={course.thumbnail || '/default-course-thumbnail.jpg'} 
+                      <img
+                        src={course.thumbnail || '/default-course-thumbnail.jpg'}
                         alt={course.title}
                         onError={(e) => {
                           e.target.src = '/default-course-thumbnail.jpg';
@@ -215,17 +229,12 @@ const Navbar = () => {
                       <div className="result-meta">
                         {course.rating && (
                           <div className="rating">
-                            <BsStar className="star-icon" />
                             <span>{course.rating.toFixed(1)}</span>
-                            {course.reviewCount && (
-                              <span className="review-count">({course.reviewCount})</span>
-                            )}
                           </div>
                         )}
                         {course.duration && (
                           <div className="duration">
-                            <BsClock className="clock-icon" />
-                            <span>{formatDuration(course.duration)}</span>
+                            <span>{course.duration}m</span>
                           </div>
                         )}
                         {course.level && (
@@ -259,7 +268,7 @@ const Navbar = () => {
                   <h6>No courses found</h6>
                   <p>Try searching for different keywords or browse our course catalog</p>
                 </div>
-                <button 
+                <button
                   className="browse-btn"
                   onClick={() => {
                     setShowResults(false);
@@ -301,7 +310,25 @@ const Navbar = () => {
                 <div className="text-muted" style={{ fontSize: '0.9em' }}>{user.email}</div>
               </div>
               <div className="mobile-nav-links">
-                {renderNavLinks()}
+                <Link to="/" className="dropdown-item" onClick={() => setShowDropdown(false)}>
+                  Home
+                </Link>
+                <Link to="/courses" className="dropdown-item" onClick={() => setShowDropdown(false)}>
+                  Browse
+                </Link>
+                {user?.role === 'admin' && (
+                  <>
+                    <Link to="/add-course" className="dropdown-item" onClick={() => setShowDropdown(false)}>
+                      Add Course
+                    </Link>
+                    <Link to="/edit-courses" className="dropdown-item" onClick={() => setShowDropdown(false)}>
+                      Edit Courses
+                    </Link>
+                    <Link to="/universal-certificate" className="dropdown-item" onClick={() => setShowDropdown(false)}>
+                      Edit Default Certificate
+                    </Link>
+                  </>
+                )}
               </div>
               <div className="dropdown-divider" />
               <Link to="/my-courses" className="dropdown-item" onClick={() => setShowDropdown(false)}>

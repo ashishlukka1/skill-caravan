@@ -115,7 +115,6 @@ const Register = () => {
           <div className="mb-3">
             <select className="form-select" name="role" value={form.role} onChange={handleChange} required>
               <option value="Employee">Employee</option>
-              <option value="instructor">Instructor</option>
             </select>
           </div>
           <div className="mb-3">

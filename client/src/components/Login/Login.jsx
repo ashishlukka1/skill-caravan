@@ -20,12 +20,16 @@ const Login = () => {
     setMessage("");
     try {
       const res = await axios.post("/api/auth/login", form);
-      if (res.data.token) {
-        localStorage.setItem("token", res.data.token);
-        setUser(res.data.user);
-        sessionStorage.setItem("user", JSON.stringify(res.data.user)); 
-        navigate("/");
-      }
+if (res.data.token) {
+  localStorage.setItem("token", res.data.token);
+  setUser(res.data.user);
+  sessionStorage.setItem("user", JSON.stringify(res.data.user));
+  if (res.data.user.role === "checker") {
+    navigate("/checker-dashboard");
+  } else {
+    navigate("/");
+  }
+}
     } catch (err) {
       if (err.response) {
         switch (err.response.status) {

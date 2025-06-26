@@ -28,6 +28,9 @@ import CertificateUploadPage from "./components/Certificates/AddCertificate";
 import "./App.css";
 import AdminUniversalCertificate from "./components/Certificates/AdminUniversalCertificate";
 import ValidateCertificate from "./components/Certificates/ValidateCertificate";
+import CheckerDashboard from "./components/CheckerDashboard/CheckerDashboard";
+import CheckerRoute from "./components/CheckerRoute";
+import ReviewCourse from "./components/CheckerDashboard/ReviewCourse";
 
 const AppLayout = () => {
   const location = useLocation();
@@ -42,7 +45,9 @@ const AppLayout = () => {
             path="/"
             element={
               <ProtectedRoute>
+                <CheckerRoute>
                 <Home />
+                </CheckerRoute> 
               </ProtectedRoute>
             }
           />
@@ -148,7 +153,16 @@ const AppLayout = () => {
               </ProtectedRoute>
             }
           />
-        </Routes>
+          <Route path="/checker-dashboard" element={<CheckerRoute><CheckerDashboard /></CheckerRoute>} />
+          <Route
+            path="/review-course/:id"
+            element={
+              <CheckerRoute>
+                <ReviewCourse />
+              </CheckerRoute>
+            }
+            />
+        </Routes> 
       </div>
       {!isAuthPage && <Footer />}
     </>
