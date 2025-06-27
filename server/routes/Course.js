@@ -106,9 +106,9 @@ router.get("/", authMiddleware, async (req, res) => {
     }
 
     const courses = await Course.find(
-      filter,
-      "title thumbnail difficulty description createdAt studentsEnrolled averageRating certificate units category approvalStatus published checkerFeedback instructor"
-    )
+  filter,
+  "title thumbnail difficulty description createdAt studentsEnrolled averageRating certificate units category approvalStatus published checkerFeedback instructor"
+)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -405,7 +405,6 @@ router.post("/", authMiddleware, isInstructorOrAdmin, async (req, res) => {
 
     let universalCert = await UniversalCertificate.findOne();
 
-    // Ensure units and lessons are always arrays
     const safeUnits = (units || []).map((unit) => ({
       title: unit.title,
       lessons: (unit.lessons || []).map((lesson) => ({
@@ -535,33 +534,36 @@ router.post("/:id/assign", authMiddleware, async (req, res) => {
     }
 
     const updates = usersToEnroll.map(async (user) => {
-      const enrollment = {
-        course: courseId,
-        enrolledAt: new Date(),
-        status: "active",
-        progress: 0,
-        unitsProgress: course.units.map((unit, unitIndex) => ({
-          unitIndex,
-          completed: false,
-          lessonsCompleted: unit.lessons.map((_, lessonIndex) => ({
-            lessonIndex,
-            completed: false,
-            resourcesProgress: [],
+const enrollment = {
+  course: courseId,
+  enrolledAt: new Date(),
+  status: "active",
+  progress: 0,
+  unitsProgress: course.units.map((unit, unitIndex) => ({
+    unitIndex,
+    completed: false,
+    lessonsCompleted: unit.lessons.map((_, lessonIndex) => ({
+      lessonIndex,
+      completed: false,
+      resourcesProgress: [],
+      lastAccessed: new Date(),
+    })),
+    assignment:
+      unit.assignment?.assignmentSets?.length > 0
+        ? {
+            assignedSetNumber: null,
+            status: "not_started",
+            submission: [],
+            score: 0,
+            attemptCount: 0,
+            questionsProgress: [],
             lastAccessed: new Date(),
-          })),
-          assignment:
-            unit.assignment?.assignmentSets?.length > 0
-              ? {
-                  assignedSetNumber: null,
-                  status: "not_started",
-                  submission: [],
-                  score: 0,
-                  questionsProgress: [],
-                }
-              : null,
-          lastAccessed: new Date(),
-        })),
-      };
+          }
+        : null,
+    lastAccessed: new Date(),
+  })),
+  assignedByAdmin: true, 
+};
 
       user.enrolledCourses.push(enrollment);
 
@@ -931,7 +933,41 @@ router.get("/validate-certificate/:certId", async (req, res) => {
 });
 
 
+// Get all enrollments for a course (admin only)
+router.get("/:id/enrollments", authMiddleware, isAdmin, async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    // Find all users enrolled in this course
+    const users = await User.find({ "enrolledCourses.course": courseId })
+      .select("name email employeeId enrolledCourses")
+      .lean();
 
+    // Map each user to their enrollment for this course
+    const enrollments = users.map(user => {
+      const enrollment = user.enrolledCourses.find(
+        e => e.course.toString() === courseId
+      );
+      return {
+  userId: user._id,
+  name: user.name,
+  email: user.email,
+  employeeId: user.employeeId,
+  status: enrollment.status,
+  progress: enrollment.progress,
+  unitsProgress: enrollment.unitsProgress,
+  assignmentsTaken: (enrollment.unitsProgress || []).reduce(
+    (acc, unit) => acc + (unit.assignment?.attemptCount || 0),
+    0
+  ),
+  assignedByAdmin: enrollment.assignedByAdmin || false, // <--- ADD THIS
+};
+    });
+
+    res.json({ enrollments });
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching enrollments" });
+  }
+});
 
 
 module.exports = router;

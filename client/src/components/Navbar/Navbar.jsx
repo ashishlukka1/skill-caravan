@@ -156,6 +156,7 @@ const Navbar = () => {
             <>
               <Link to="/add-course" className="ms-3">Add Course</Link>
               <Link to="/edit-courses" className="ms-3">Edit Courses</Link>
+              <Link to="/admin-dashboard" className="ms-3">Employee Status</Link>
             </>
           )}
         </div>
@@ -324,8 +325,8 @@ const Navbar = () => {
                     <Link to="/edit-courses" className="dropdown-item" onClick={() => setShowDropdown(false)}>
                       Edit Courses
                     </Link>
-                    <Link to="/universal-certificate" className="dropdown-item" onClick={() => setShowDropdown(false)}>
-                      Edit Default Certificate
+                    <Link to="/admin-dashboard" className="dropdown-item" onClick={() => setShowDropdown(false)}>
+                      Employee Status
                     </Link>
                   </>
                 )}

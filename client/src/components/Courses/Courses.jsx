@@ -199,59 +199,65 @@ const CourseCard = ({
           <div />
         )}
   </div>
-  <div className="course-action">
-    {user?.role === "admin" ? (
-      <>
-        <Button
-          variant="primary"
-          size="sm"
-          className="action-btn me-2"
-          onClick={() => onAssign(course)}
-        >
-          Assign
-        </Button>
-        <Button
-          variant="outline-primary"
-          size="sm"
-          className="btn-outline-primary action-btn"
-          onClick={() => onEdit(course._id)}
-        >
-          Edit
-        </Button>
-      </>
-    ) : user ? (
-      enrolled ? (
-        <Button
-          variant="success"
-          size="sm"
-          className="action-btn"
-          onClick={() => onResume(course._id)}
-        >
-          {progress === 100 ? "Review" : "Continue"}
-        </Button>
-      ) : (
-        <Button
-          variant="primary"
-          size="sm"
-          className="action-btn"
-          disabled={enrolling}
-          onClick={() => onEnroll(course._id)}
-        >
-          {enrolling ? "Enrolling..." : "Enroll"}
-        </Button>
-      )
-    ) : (
+<div className="course-action">
+  {user?.role === "admin" ? (
+    <>
+      <Button
+        variant="primary"
+        size="sm"
+        className="action-btn me-2"
+        onClick={() => onAssign(course)}
+        disabled={course.approvalStatus !== "approved"} // <-- Only enabled if validated
+        title={
+          course.approvalStatus !== "approved"
+            ? "Course must be validated before assignment"
+            : "Assign"
+        }
+      >
+        Assign
+      </Button>
       <Button
         variant="outline-primary"
         size="sm"
-        className="action-btn"
-        as={Link}
-        to="/login"
+        className="btn-outline-primary action-btn"
+        onClick={() => onEdit(course._id)}
       >
-        Login to Enroll
+        Edit
       </Button>
-    )}
-  </div>
+    </>
+  ) : user ? (
+    enrolled ? (
+      <Button
+        variant="success"
+        size="sm"
+        className="action-btn"
+        onClick={() => onResume(course._id)}
+      >
+        {progress === 100 ? "Review" : "Continue"}
+      </Button>
+    ) : (
+      <Button
+        variant="primary"
+        size="sm"
+        className="action-btn"
+        disabled={enrolling}
+        onClick={() => onEnroll(course._id)}
+      >
+        {enrolling ? "Enrolling..." : "Enroll"}
+      </Button>
+    )
+  ) : (
+    <Button
+      variant="outline-primary"
+      size="sm"
+      className="action-btn"
+      as={Link}
+      to="/login"
+    >
+      Login to Enroll
+    </Button>
+  )}
+</div>
 </div>
       </div>
     </div>

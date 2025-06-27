@@ -80,6 +80,7 @@ const enrollmentSchema = new mongoose.Schema(
       certificateUrl: String,
       storageUrl: String,
     },
+    assignedByAdmin: { type: Boolean, default: false }, 
   },
   { _id: false }
 );

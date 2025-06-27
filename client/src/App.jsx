@@ -31,6 +31,7 @@ import ValidateCertificate from "./components/Certificates/ValidateCertificate";
 import CheckerDashboard from "./components/CheckerDashboard/CheckerDashboard";
 import CheckerRoute from "./components/CheckerRoute";
 import ReviewCourse from "./components/CheckerDashboard/ReviewCourse";
+import AdminDashboard from "./components/AdminDashboard/AdminDashboard";
 
 const AppLayout = () => {
   const location = useLocation();
@@ -46,12 +47,15 @@ const AppLayout = () => {
             element={
               <ProtectedRoute>
                 <CheckerRoute>
-                <Home />
-                </CheckerRoute> 
+                  <Home />
+                </CheckerRoute>
               </ProtectedRoute>
             }
           />
-          <Route path="/validate-certificate/:certId" element={<ValidateCertificate />} />
+          <Route
+            path="/validate-certificate/:certId"
+            element={<ValidateCertificate />}
+          />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<UserRegistrationForm />} />
           <Route
@@ -153,7 +157,24 @@ const AppLayout = () => {
               </ProtectedRoute>
             }
           />
-          <Route path="/checker-dashboard" element={<CheckerRoute><CheckerDashboard /></CheckerRoute>} />
+          <Route
+            path="/admin-dashboard"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <AdminDashboard />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/checker-dashboard"
+            element={
+              <CheckerRoute>
+                <CheckerDashboard />
+              </CheckerRoute>
+            }
+          />
           <Route
             path="/review-course/:id"
             element={
@@ -161,8 +182,8 @@ const AppLayout = () => {
                 <ReviewCourse />
               </CheckerRoute>
             }
-            />
-        </Routes> 
+          />
+        </Routes>
       </div>
       {!isAuthPage && <Footer />}
     </>

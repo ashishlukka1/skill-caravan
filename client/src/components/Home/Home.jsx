@@ -15,7 +15,7 @@ const defaultThumbnail = 'https://i.postimg.cc/43Fp6cy7/20250625-1214-Default-Co
 
 const bannerImages = [
   'https://u.cubeupload.com/ashishl/bannerforaco17506730.png',
-  'https://u.cubeupload.com/ashishl/LevelUpYourCareer4.png', 
+  'https://i.postimg.cc/G2MfBXv7/Level-Up-Your-Career-4.png', 
   'https://u.cubeupload.com/ashishl/LevelUpYourCareer3.png',
   'https://u.cubeupload.com/ashishl/LevelUpYourCareer1.png'
 ];
@@ -234,7 +234,7 @@ const Home = () => {
         // Fetch enrollments
         const enrollmentsResponse = await axios.get('/api/users/enrollments');
         setEnrollments(enrollmentsResponse.data?.filter(e => e?.course) || []);
-      } catch (err) {
+      } catch (err) {                                                   
         setError('Failed to load data. Please try again later.');
         console.error('Error:', err);
       } finally {
