@@ -81,6 +81,7 @@ const enrollmentSchema = new mongoose.Schema(
       storageUrl: String,
     },
     assignedByAdmin: { type: Boolean, default: false }, 
+    nextDueDate: { type: Date },
   },
   { _id: false }
 );

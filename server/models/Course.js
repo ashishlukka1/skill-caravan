@@ -43,42 +43,42 @@ const courseSchema = new mongoose.Schema({
   ],
   certificate: {
     templateBase64: { type: String },
-  templateUrl: { type: String },
-  templateStoragePath: { type: String },
-  textSettings: {
-    nameBox: {
-      x: { type: Number },
-      y: { type: Number },
-      width: { type: Number },
-      height: { type: Number }
+    templateUrl: { type: String },
+    templateStoragePath: { type: String },
+    textSettings: {
+      nameBox: {
+        x: { type: Number },
+        y: { type: Number },
+        width: { type: Number },
+        height: { type: Number },
+      },
+      courseBox: {
+        x: { type: Number },
+        y: { type: Number },
+        width: { type: Number },
+        height: { type: Number },
+      },
+      dateBox: {
+        x: { type: Number },
+        y: { type: Number },
+        width: { type: Number },
+        height: { type: Number },
+      },
+      qrBox: {
+        x: { type: Number },
+        y: { type: Number },
+        width: { type: Number },
+        height: { type: Number },
+      },
+      font: {
+        family: { type: String, default: "Arial" },
+        color: { type: String, default: "#000000" },
+        nameSize: { type: Number, default: 32 },
+        courseSize: { type: Number, default: 32 },
+        dateSize: { type: Number, default: 32 },
+        qrSize: { type: Number, default: 80 },
+      },
     },
-    courseBox: {
-      x: { type: Number },
-      y: { type: Number },
-      width: { type: Number },
-      height: { type: Number }
-    },
-    dateBox: {
-      x: { type: Number },
-      y: { type: Number },
-      width: { type: Number },
-      height: { type: Number }
-    },
-    qrBox: {
-      x: { type: Number },
-      y: { type: Number },
-      width: { type: Number },
-      height: { type: Number }
-    },
-    font: {
-      family: { type: String, default: "Arial" },
-      color: { type: String, default: "#000000" },
-      nameSize: { type: Number, default: 32 },
-      courseSize: { type: Number, default: 32 },
-      dateSize: { type: Number, default: 32 },
-      qrSize: { type: Number, default: 80 }
-    }
-  }
   },
   ratings: [
     {
@@ -110,10 +110,13 @@ const courseSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
+isDefault: { type: Boolean, default: false },
+isRecurring: { type: Boolean, default: false },
+recurringNextDate: { type: Date }, 
+createdAt: {
+  type: Date,
+  default: Date.now,
+},
 });
 
 module.exports = mongoose.model("Course", courseSchema);

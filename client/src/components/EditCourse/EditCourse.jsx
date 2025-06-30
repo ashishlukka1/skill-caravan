@@ -54,7 +54,7 @@ const EditCourses = () => {
       try {
         setLoading(true);
         setError("");
-        const response = await axios.get("/api/courses");
+        const response = await axios.get("/api/courses/get-editcourses");
         setCourses(response.data.courses);
       } catch (err) {
         setError("Error fetching courses.");

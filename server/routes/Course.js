@@ -6,7 +6,7 @@ const {
   isInstructor,
   isInstructorOrAdmin,
   isAdmin,
-  isChecker
+  isChecker,
 } = require("../middleware/auth");
 const Course = require("../models/Course");
 const User = require("../models/User");
@@ -97,18 +97,65 @@ router.get("/", authMiddleware, async (req, res) => {
 
     if (role === "employee") {
       filter = { approvalStatus: "approved", published: true };
-    } else if (role === "checker" || role === "admin" || role === "instructor") {
-      if (req.query.status === "approved") filter = { approvalStatus: "approved" };
-      else if (req.query.status === "rejected") filter = { approvalStatus: "rejected" };
+    } else if (
+      role === "checker" ||
+      role === "admin" ||
+      role === "instructor"
+    ) {
+      if (req.query.status === "approved")
+        filter = { approvalStatus: "approved" };
+      else if (req.query.status === "rejected")
+        filter = { approvalStatus: "rejected" };
       // else see all
     } else {
       filter = { approvalStatus: "approved", published: true };
     }
 
     const courses = await Course.find(
-  filter,
-  "title thumbnail difficulty description createdAt studentsEnrolled averageRating certificate units category approvalStatus published checkerFeedback instructor"
-)
+      filter,
+      "title thumbnail difficulty description createdAt studentsEnrolled averageRating certificate units category approvalStatus published checkerFeedback instructor"
+    )
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await Course.countDocuments(filter);
+    res.json({ courses, total });
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching courses" });
+  }
+});
+
+
+router.get("/get-editcourses", authMiddleware, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 12;
+    const skip = (page - 1) * limit;
+
+    let filter = {};
+    const role = (req.user.role || "").toLowerCase();
+
+    if (role === "employee") {
+      filter = { approvalStatus: "approved", published: true };
+    } else if (
+      role === "checker" ||
+      role === "admin" ||
+      role === "instructor"
+    ) {
+      if (req.query.status === "approved")
+        filter = { approvalStatus: "approved" };
+      else if (req.query.status === "rejected")
+        filter = { approvalStatus: "rejected" };
+      // else see all
+    } else {
+      filter = { approvalStatus: "approved", published: true };
+    }
+
+    const courses = await Course.find(
+      filter,
+      "title thumbnail createdAt studentsEnrolled units category approvalStatus checkerFeedback"
+    )
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -212,6 +259,7 @@ router.post(
 
         if (enrollment.progress === 100) {
           enrollment.status = "completed";
+            enrollment.completedAt = new Date(); 
           if (!enrollment.certificate || !enrollment.certificate.issued) {
             try {
               const certObj = await generateCertificateForUser({
@@ -301,6 +349,7 @@ router.post("/:id/enroll", authMiddleware, async (req, res) => {
             resourcesProgress: [],
             lastAccessed: new Date(),
           })),
+          
           assignment:
             unit.assignment?.assignmentSets?.length > 0
               ? {
@@ -315,6 +364,13 @@ router.post("/:id/enroll", authMiddleware, async (req, res) => {
               : null,
           lastAccessed: new Date(),
         })),
+        // Only set nextDueDate if it's in the future
+        nextDueDate:
+          course.isRecurring &&
+          course.recurringNextDate &&
+          new Date(course.recurringNextDate) > new Date()
+            ? course.recurringNextDate
+            : undefined,
       };
 
       user.enrolledCourses.push(enrollment);
@@ -450,8 +506,11 @@ router.post("/", authMiddleware, isInstructorOrAdmin, async (req, res) => {
             textSettings: universalCert.textSettings,
           }
         : undefined,
-        approvalStatus: "pending",
-        published: false,
+      approvalStatus: "pending",
+      isDefault: req.body.isDefault || false,
+      isRecurring: req.body.isRecurring || false,
+      recurringNextDate: req.body.recurringNextDate || null,
+      published: false,
     };
 
     const course = new Course(courseData);
@@ -534,36 +593,42 @@ router.post("/:id/assign", authMiddleware, async (req, res) => {
     }
 
     const updates = usersToEnroll.map(async (user) => {
-const enrollment = {
-  course: courseId,
-  enrolledAt: new Date(),
-  status: "active",
-  progress: 0,
-  unitsProgress: course.units.map((unit, unitIndex) => ({
-    unitIndex,
-    completed: false,
-    lessonsCompleted: unit.lessons.map((_, lessonIndex) => ({
-      lessonIndex,
-      completed: false,
-      resourcesProgress: [],
-      lastAccessed: new Date(),
-    })),
-    assignment:
-      unit.assignment?.assignmentSets?.length > 0
-        ? {
-            assignedSetNumber: null,
-            status: "not_started",
-            submission: [],
-            score: 0,
-            attemptCount: 0,
-            questionsProgress: [],
+      const enrollment = {
+        course: courseId,
+        enrolledAt: new Date(),
+        status: "active",
+        progress: 0,
+        unitsProgress: course.units.map((unit, unitIndex) => ({
+          unitIndex,
+          completed: false,
+          lessonsCompleted: unit.lessons.map((_, lessonIndex) => ({
+            lessonIndex,
+            completed: false,
+            resourcesProgress: [],
             lastAccessed: new Date(),
-          }
-        : null,
-    lastAccessed: new Date(),
-  })),
-  assignedByAdmin: true, 
-};
+          })),
+          assignment:
+            unit.assignment?.assignmentSets?.length > 0
+              ? {
+                  assignedSetNumber: null,
+                  status: "not_started",
+                  submission: [],
+                  score: 0,
+                  attemptCount: 0,
+                  questionsProgress: [],
+                  lastAccessed: new Date(),
+                }
+              : null,
+          lastAccessed: new Date(),
+        })),
+        assignedByAdmin: true,
+          nextDueDate:
+    course.isRecurring &&
+    course.recurringNextDate &&
+    new Date(course.recurringNextDate) > new Date()
+      ? course.recurringNextDate
+      : undefined,
+      };
 
       user.enrolledCourses.push(enrollment);
 
@@ -623,6 +688,9 @@ router.put("/:id", authMiddleware, async (req, res) => {
       "tags",
       "duration",
       "units",
+      "isDefault",
+      "isRecurring",
+      "recurringNextDate",
     ];
 
     allowedUpdates.forEach((field) => {
@@ -661,6 +729,43 @@ router.put("/:id", authMiddleware, async (req, res) => {
     }
 
     await course.save();
+
+if (typeof req.body.recurringNextDate !== "undefined") {
+  // Update where nextDueDate is in the past or today
+  await User.updateMany(
+    { "enrolledCourses.course": course._id },
+    {
+      $set: {
+        "enrolledCourses.$[elem].nextDueDate": req.body.recurringNextDate,
+      },
+    },
+    {
+      arrayFilters: [
+        {
+          "elem.course": course._id,
+          "elem.nextDueDate": { $lte: new Date() },
+        },
+      ],
+    }
+  );
+  // Update where nextDueDate is null
+  await User.updateMany(
+    { "enrolledCourses.course": course._id },
+    {
+      $set: {
+        "enrolledCourses.$[elem].nextDueDate": req.body.recurringNextDate,
+      },
+    },
+    {
+      arrayFilters: [
+        {
+          "elem.course": course._id,
+          "elem.nextDueDate": null,
+        },
+      ],
+    }
+  );
+}
     res.json({
       message: "Course updated successfully",
       course,
@@ -932,7 +1037,6 @@ router.get("/validate-certificate/:certId", async (req, res) => {
   });
 });
 
-
 // Get all enrollments for a course (admin only)
 router.get("/:id/enrollments", authMiddleware, isAdmin, async (req, res) => {
   try {
@@ -943,24 +1047,24 @@ router.get("/:id/enrollments", authMiddleware, isAdmin, async (req, res) => {
       .lean();
 
     // Map each user to their enrollment for this course
-    const enrollments = users.map(user => {
+    const enrollments = users.map((user) => {
       const enrollment = user.enrolledCourses.find(
-        e => e.course.toString() === courseId
+        (e) => e.course.toString() === courseId
       );
       return {
-  userId: user._id,
-  name: user.name,
-  email: user.email,
-  employeeId: user.employeeId,
-  status: enrollment.status,
-  progress: enrollment.progress,
-  unitsProgress: enrollment.unitsProgress,
-  assignmentsTaken: (enrollment.unitsProgress || []).reduce(
-    (acc, unit) => acc + (unit.assignment?.attemptCount || 0),
-    0
-  ),
-  assignedByAdmin: enrollment.assignedByAdmin || false, // <--- ADD THIS
-};
+        userId: user._id,
+        name: user.name,
+        email: user.email,
+        employeeId: user.employeeId,
+        status: enrollment.status,
+        progress: enrollment.progress,
+        unitsProgress: enrollment.unitsProgress,
+        assignmentsTaken: (enrollment.unitsProgress || []).reduce(
+          (acc, unit) => acc + (unit.assignment?.attemptCount || 0),
+          0
+        ),
+        assignedByAdmin: enrollment.assignedByAdmin || false, // <--- ADD THIS
+      };
     });
 
     res.json({ enrollments });
@@ -968,6 +1072,5 @@ router.get("/:id/enrollments", authMiddleware, isAdmin, async (req, res) => {
     res.status(500).json({ message: "Error fetching enrollments" });
   }
 });
-
 
 module.exports = router;

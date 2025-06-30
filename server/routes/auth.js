@@ -3,9 +3,62 @@ const router = express.Router();
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const Course = require("../models/Course");
+const { reassignRecurringCourses } = require("../routes/User");
+
+
+
+async function autoEnrollDefaultCourses(userId) {
+  const defaultCourses = await Course.find({ isDefault: true });
+  const user = await User.findById(userId);
+  for (const course of defaultCourses) {
+    const alreadyEnrolled = user.enrolledCourses.some(
+      (e) => e.course.toString() === course._id.toString()
+    );
+    if (!alreadyEnrolled) {
+      user.enrolledCourses.push({
+        course: course._id,
+        enrolledAt: new Date(),
+        status: "active",
+        progress: 0,
+        unitsProgress: (course.units || []).map((unit, unitIndex) => ({
+          unitIndex,
+          completed: false,
+          lessonsCompleted: (unit.lessons || []).map((_, lessonIndex) => ({
+            lessonIndex,
+            completed: false,
+            resourcesProgress: [],
+            lastAccessed: new Date(),
+          })),
+          assignment:
+            unit.assignment?.assignmentSets?.length > 0
+              ? {
+                  assignedSetNumber: null,
+                  status: "not_started",
+                  submission: [],
+                  score: 0,
+                  attemptCount: 0,
+                  questionsProgress: [],
+                  lastAccessed: new Date(),
+                }
+              : null,
+          lastAccessed: new Date(),
+        })),
+        assignedByAdmin: true,
+      });
+      if (!course.studentsEnrolled.includes(user._id)) {
+        course.studentsEnrolled.push(user._id);
+        await course.save();
+      }
+    }
+  }
+  await user.save();
+}
+
 
 // Register
 router.post("/register", async (req, res) => {
+
   try {
     const {
       name,
@@ -85,6 +138,8 @@ router.post("/register", async (req, res) => {
 
     await user.save();
 
+await autoEnrollDefaultCourses(user._id);
+
     res.status(201).json({
       message: "User registered successfully",
       userId: user._id,
@@ -121,6 +176,8 @@ router.post("/register", async (req, res) => {
   }
 });
 
+
+
 // Login
 router.post("/login", async (req, res) => {
   try {
@@ -137,6 +194,9 @@ router.post("/login", async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: "Invalid password" });
+
+    reassignRecurringCourses(user._id).catch(console.error);
+
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1d",

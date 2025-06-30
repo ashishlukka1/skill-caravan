@@ -16,18 +16,26 @@ import {
   ToastContainer,
 } from "react-bootstrap";
 import { Modal } from "react-bootstrap";
-import { FaPlus, FaTrash, FaFileAlt, FaFile, FaPlay, FaCheckCircle, FaTimesCircle, FaInfoCircle, FaTimes } from "react-icons/fa";
+import {
+  FaPlus,
+  FaTrash,
+  FaFileAlt,
+  FaFile,
+  FaPlay,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaInfoCircle,
+  FaTimes,
+} from "react-icons/fa";
 import "./EditCourseById.css";
 import "../Certificates/AddCertificate";
 import { fileToBase64 } from "../../utils/fileBase64";
 
-
-
-
 // --- Resource Modal ---
 const ResourceModal = ({ resource, show, onHide, onComplete }) => {
   if (!resource) return null;
-  const isVideo = resource.type === 'video_file' || resource.type === 'video_url';
+  const isVideo =
+    resource.type === "video_file" || resource.type === "video_url";
   const isYouTubeUrl = (url) =>
     url.includes("youtube.com") || url.includes("youtu.be");
   const getYouTubeEmbedUrl = (url) => {
@@ -46,12 +54,12 @@ const ResourceModal = ({ resource, show, onHide, onComplete }) => {
     <Modal
       show={show}
       onHide={onHide}
-      size="xl" // <-- Make modal extra large
+      size="xl"
       centered
       dialogClassName="resource-video-modal"
       backdrop={isVideo ? "static" : true}
       keyboard={!isVideo ? true : false}
-      style={{ maxWidth: "98vw" }} // <-- Prevent overflow on very small screens
+      style={{ maxWidth: "98vw" }} 
     >
       <Modal.Header closeButton>
         <Modal.Title>{resource.title}</Modal.Title>
@@ -63,20 +71,24 @@ const ResourceModal = ({ resource, show, onHide, onComplete }) => {
           justifyContent: "center",
           alignItems: "center",
           minHeight: 0,
-          background: "#0001"
+          background: "#0001",
         }}
       >
-        {resource.type === 'video_url' && (
+        {resource.type === "video_url" && (
           <div
             style={{
               width: "100%",
               maxWidth: "900px",
               aspectRatio: "16/9",
-              margin: "auto"
+              margin: "auto",
             }}
           >
             <iframe
-              src={isYouTubeUrl(resource.url) ? getYouTubeEmbedUrl(resource.url) : resource.url}
+              src={
+                isYouTubeUrl(resource.url)
+                  ? getYouTubeEmbedUrl(resource.url)
+                  : resource.url
+              }
               title={resource.title}
               allowFullScreen
               style={{
@@ -84,12 +96,12 @@ const ResourceModal = ({ resource, show, onHide, onComplete }) => {
                 width: "100%",
                 height: "100%",
                 minHeight: 320,
-                background: "#000"
+                background: "#000",
               }}
             ></iframe>
           </div>
         )}
-        {resource.type === 'video_file' && resource.url && (
+        {resource.type === "video_file" && resource.url && (
           <div
             style={{
               width: "100%",
@@ -97,7 +109,7 @@ const ResourceModal = ({ resource, show, onHide, onComplete }) => {
               aspectRatio: "16/9",
               margin: "auto",
               display: "flex",
-              justifyContent: "center"
+              justifyContent: "center",
             }}
           >
             <video
@@ -106,26 +118,31 @@ const ResourceModal = ({ resource, show, onHide, onComplete }) => {
                 height: "100%",
                 maxHeight: "70vh",
                 borderRadius: 8,
-                background: "#000"
+                background: "#000",
               }}
               controls
             >
-              <source src={resource.url} type={resource.fileDetails?.contentType || "video/mp4"} />
+              <source
+                src={resource.url}
+                type={resource.fileDetails?.contentType || "video/mp4"}
+              />
               Your browser does not support the video tag.
             </video>
           </div>
         )}
-        {resource.type === 'document' && resource.url && !resource.url.startsWith("data:application/pdf") && (
-          <a
-            href={resource.url}
-            download={resource.fileDetails?.originalName || resource.title}
-            className="btn btn-primary m-4"
-          >
-            <FaFile className="me-2" />
-            Download Document
-          </a>
-        )}
-        {resource.type === 'document_url' && (
+        {resource.type === "document" &&
+          resource.url &&
+          !resource.url.startsWith("data:application/pdf") && (
+            <a
+              href={resource.url}
+              download={resource.fileDetails?.originalName || resource.title}
+              className="btn btn-primary m-4"
+            >
+              <FaFile className="me-2" />
+              Download Document
+            </a>
+          )}
+        {resource.type === "document_url" && (
           <div className="text-center w-100 my-4">
             <a
               href={resource.url}
@@ -161,12 +178,18 @@ const ResourceForm = ({ unitIndex, lessonIndex, onSubmit, onCancel }) => {
       setFile(null);
       return;
     }
-    if (type === "video_file" && selectedFile.size > MAX_VIDEO_SIZE_MB * 1024 * 1024) {
+    if (
+      type === "video_file" &&
+      selectedFile.size > MAX_VIDEO_SIZE_MB * 1024 * 1024
+    ) {
       setFileError(`Video file size must be less than ${MAX_VIDEO_SIZE_MB}MB`);
       setFile(null);
       return;
     }
-    if (type === "document" && selectedFile.size > MAX_DOC_SIZE_MB * 1024 * 1024) {
+    if (
+      type === "document" &&
+      selectedFile.size > MAX_DOC_SIZE_MB * 1024 * 1024
+    ) {
       setFileError(`Document size must be less than ${MAX_DOC_SIZE_MB}MB`);
       setFile(null);
       return;
@@ -215,7 +238,14 @@ const ResourceForm = ({ unitIndex, lessonIndex, onSubmit, onCancel }) => {
         <Col md={4}>
           <Form.Group>
             <Form.Label>Resource Type</Form.Label>
-            <Form.Select value={type} onChange={(e) => { setType(e.target.value); setFile(null); setFileError(""); }}>
+            <Form.Select
+              value={type}
+              onChange={(e) => {
+                setType(e.target.value);
+                setFile(null);
+                setFileError("");
+              }}
+            >
               <option value="video_url">Video URL</option>
               <option value="video_file">Video File (Max Size: 100mb)</option>
               <option value="document">Document (Max Size: 10mb)</option>
@@ -319,7 +349,7 @@ const TopRightAlert = ({ show, variant, message, onClose }) => {
       className="p-3"
       style={{
         zIndex: 1060,
-        position: "fixed", // <-- make it fixed
+        position: "fixed",
         top: 16,
         right: 16,
       }}
@@ -340,7 +370,9 @@ const TopRightAlert = ({ show, variant, message, onClose }) => {
         <Toast.Body className="d-flex align-items-center justify-content-between text-white p-3">
           <div className="d-flex align-items-center">
             {iconMap[variant]}
-            <span style={{ fontSize: "14px", fontWeight: "500" }}>{message}</span>
+            <span style={{ fontSize: "14px", fontWeight: "500" }}>
+              {message}
+            </span>
           </div>
           <FaTimes
             className="ms-3"
@@ -352,7 +384,6 @@ const TopRightAlert = ({ show, variant, message, onClose }) => {
     </ToastContainer>
   );
 };
-
 
 const EditCourseById = () => {
   const { id } = useParams();
@@ -366,11 +397,11 @@ const EditCourseById = () => {
     lesson: null,
   });
   const [uploadingResource, setUploadingResource] = useState(false);
-  
-  const [selectedResource, setSelectedResource] = useState(null);
-const [showResourceModal, setShowResourceModal] = useState(false);
 
-const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [selectedResource, setSelectedResource] = useState(null);
+  const [showResourceModal, setShowResourceModal] = useState(false);
+
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [showErrorAlert, setShowErrorAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
 
@@ -455,47 +486,47 @@ const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   };
 
   const handleResourceClick = (resource, unitIdx, lessonIdx, resourceIdx) => {
-  const isPdf =
-    resource.type === "document" &&
-    resource.url &&
-    resource.url.startsWith("data:application/pdf");
-  if (isPdf) {
-    // Convert base64 to Blob and open in new tab
-    const base64 = resource.url.split(",")[1];
-    const byteString = atob(base64);
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i);
+    const isPdf =
+      resource.type === "document" &&
+      resource.url &&
+      resource.url.startsWith("data:application/pdf");
+    if (isPdf) {
+      // Convert base64 to Blob and open in new tab
+      const base64 = resource.url.split(",")[1];
+      const byteString = atob(base64);
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      const blob = new Blob([ab], { type: "application/pdf" });
+      const blobUrl = URL.createObjectURL(blob);
+      const win = window.open(blobUrl, "_blank");
+      // Set the document title after the PDF loads (may not work in all browsers)
+      if (win) {
+        win.onload = () => {
+          win.document.title = resource.title || "Document";
+        };
+      }
+      // Revoke the blob URL after a short delay to ensure the PDF loads
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    } else if (resource.type === "document" && resource.url) {
+      // For non-PDF documents, download
+      const link = document.createElement("a");
+      link.href = resource.url;
+      link.download =
+        resource.fileDetails?.originalName || resource.title || "document";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else if (
+      resource.type === "video_url" ||
+      resource.type === "video_file"
+    ) {
+      setSelectedResource({ ...resource, unitIdx, lessonIdx, resourceIdx });
+      setShowResourceModal(true);
     }
-    const blob = new Blob([ab], { type: "application/pdf" });
-    const blobUrl = URL.createObjectURL(blob);
-    const win = window.open(blobUrl, "_blank");
-    // Set the document title after the PDF loads (may not work in all browsers)
-    if (win) {
-      win.onload = () => {
-        win.document.title = resource.title || "Document";
-      };
-    }
-    // Revoke the blob URL after a short delay to ensure the PDF loads
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-  } else if (resource.type === "document" && resource.url) {
-    // For non-PDF documents, download
-    const link = document.createElement("a");
-    link.href = resource.url;
-    link.download =
-      resource.fileDetails?.originalName || resource.title || "document";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  } else if (
-    resource.type === "video_url" ||
-    resource.type === "video_file"
-  ) {
-    setSelectedResource({ ...resource, unitIdx, lessonIdx, resourceIdx });
-    setShowResourceModal(true);
-  }
-};
+  };
 
   // --- Lesson Management ---
   const handleAddLesson = (unitIndex) => {
@@ -862,17 +893,21 @@ const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   };
 
   if (loading) {
-  return (
-    <div
-      className="d-flex justify-content-center align-items-center"
-      style={{ minHeight: "100vh" }}
-    >
-      <Spinner animation="border" role="status" style={{ width: 60, height: 60 }}>
-        <span className="visually-hidden">Loading...</span>
-      </Spinner>
-    </div>
-  );
-}
+    return (
+      <div
+        className="d-flex justify-content-center align-items-center"
+        style={{ minHeight: "100vh" }}
+      >
+        <Spinner
+          animation="border"
+          role="status"
+          style={{ width: 60, height: 60 }}
+        >
+          <span className="visually-hidden">Loading...</span>
+        </Spinner>
+      </div>
+    );
+  }
 
   if (!course) {
     return (
@@ -1008,6 +1043,59 @@ const [showSuccessAlert, setShowSuccessAlert] = useState(false);
                     </div>
                   )}
                 </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Check
+                    type="checkbox"
+                    label="Assign to all new Employees by default"
+                    checked={course.isDefault}
+                    onChange={(e) =>
+                      setCourse((prev) => ({
+                        ...prev,
+                        isDefault: e.target.checked,
+                      }))
+                    }
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Check
+                    type="checkbox"
+                    label="Make this course recurring"
+                    checked={course.isRecurring}
+                    onChange={(e) =>
+                      setCourse((prev) => ({
+                        ...prev,
+                        isRecurring: e.target.checked,
+                      }))
+                    }
+                  />
+                  {course.isRecurring && (
+                    // ...inside the recurring date input...
+<Form.Control
+  type="datetime-local"
+  value={
+    course.recurringNextDate
+      ? (() => {
+          // Convert to local datetime-local format
+          const d = new Date(course.recurringNextDate);
+          d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+          return d.toISOString().slice(0, 16);
+        })()
+      : ""
+  }
+  onChange={e => {
+    // Save as ISO string in local time
+    const local = e.target.value;
+    setCourse(prev => ({
+      ...prev,
+      recurringNextDate: local ? new Date(local).toISOString() : "",
+    }));
+  }}
+  placeholder="Next recurring date & time"
+  className="mt-2"
+  required
+/>
+                  )}
+                </Form.Group>
                 {hasCertificate ? (
                   <div className="mb-3">
                     <div className="mb-2">
@@ -1027,7 +1115,7 @@ const [showSuccessAlert, setShowSuccessAlert] = useState(false);
                     </div>
                     <Button
                       variant="outline-info"
-                      onClick={() =>
+                      onClick={() =>  
                         navigate(`/edit-courses/${id}/certificate-upload`)
                       }
                     >
@@ -1187,59 +1275,73 @@ const [showSuccessAlert, setShowSuccessAlert] = useState(false);
                               </div>
                               {(lesson.resources || []).length > 0 ? (
                                 <div className="resources-list">
-                                  {lesson.resources.map((resource, resourceIndex) => (
-  <div
-    key={resourceIndex}
-    className="resource-item d-flex align-items-center mb-2"
-  >
-    <Badge
-      bg={
-        resource.type === "video_url"
-          ? "primary"
-          : resource.type === "video_file"
-          ? "success"
-          : "secondary"
-      }
-    >
-      {resource.type === "video_url"
-        ? "Video URL"
-        : resource.type === "video_file"
-        ? "Video File"
-        : "Document"}
-    </Badge>
-    <span className="resource-title ms-2">
-      {resource.title || ""}
-    </span>
-    <Button
-      variant="outline-danger"
-      size="sm"
-      className="btn-remove ms-2"
-      onClick={() =>
-        handleRemoveResource(
-          unitIndex,
-          lessonIndex,
-          resourceIndex
-        )
-      }
-    >
-      <FaTrash />
-    </Button>
-    {/* Add this button for resource actions */}
-    <Button
-      key={resourceIndex}
-      variant="outline-secondary"
-      size="sm"
-      className="ms-2"
-      onClick={() =>
-        handleResourceClick(resource, unitIndex, lessonIndex, resourceIndex)
-      }
-    >
-      {(resource.type === 'video_url' || resource.type === 'video_file') && <FaPlay className="me-1" />}
-      {(resource.type === 'document' || resource.type === 'document_url') && <FaFile className="me-1" />}
-      {resource.title}
-    </Button>
-  </div>
-))}
+                                  {lesson.resources.map(
+                                    (resource, resourceIndex) => (
+                                      <div
+                                        key={resourceIndex}
+                                        className="resource-item d-flex align-items-center mb-2"
+                                      >
+                                        <Badge
+                                          bg={
+                                            resource.type === "video_url"
+                                              ? "primary"
+                                              : resource.type === "video_file"
+                                              ? "success"
+                                              : "secondary"
+                                          }
+                                        >
+                                          {resource.type === "video_url"
+                                            ? "Video URL"
+                                            : resource.type === "video_file"
+                                            ? "Video File"
+                                            : "Document"}
+                                        </Badge>
+                                        <span className="resource-title ms-2">
+                                          {resource.title || ""}
+                                        </span>
+                                        <Button
+                                          variant="outline-danger"
+                                          size="sm"
+                                          className="btn-remove ms-2"
+                                          onClick={() =>
+                                            handleRemoveResource(
+                                              unitIndex,
+                                              lessonIndex,
+                                              resourceIndex
+                                            )
+                                          }
+                                        >
+                                          <FaTrash />
+                                        </Button>
+                                        {/* Add this button for resource actions */}
+                                        <Button
+                                          key={resourceIndex}
+                                          variant="outline-secondary"
+                                          size="sm"
+                                          className="ms-2"
+                                          onClick={() =>
+                                            handleResourceClick(
+                                              resource,
+                                              unitIndex,
+                                              lessonIndex,
+                                              resourceIndex
+                                            )
+                                          }
+                                        >
+                                          {(resource.type === "video_url" ||
+                                            resource.type === "video_file") && (
+                                            <FaPlay className="me-1" />
+                                          )}
+                                          {(resource.type === "document" ||
+                                            resource.type ===
+                                              "document_url") && (
+                                            <FaFile className="me-1" />
+                                          )}
+                                          {resource.title}
+                                        </Button>
+                                      </div>
+                                    )
+                                  )}
                                 </div>
                               ) : (
                                 <div className="resources-empty">
@@ -1538,13 +1640,13 @@ const [showSuccessAlert, setShowSuccessAlert] = useState(false);
         </Col>
       </Row>
       <ResourceModal
-  resource={selectedResource}
-  show={showResourceModal}
-  onHide={() => {
-    setShowResourceModal(false);
-    setSelectedResource(null);
-  }}
-/>
+        resource={selectedResource}
+        show={showResourceModal}
+        onHide={() => {
+          setShowResourceModal(false);
+          setSelectedResource(null);
+        }}
+      />
     </Container>
   );
 };

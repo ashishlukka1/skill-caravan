@@ -14,7 +14,15 @@ import {
   Toast,
   ToastContainer,
 } from "react-bootstrap";
-import { FaPlus, FaTrash, FaFileAlt, FaCheckCircle, FaTimesCircle, FaInfoCircle, FaTimes } from "react-icons/fa";
+import {
+  FaPlus,
+  FaTrash,
+  FaFileAlt,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaInfoCircle,
+  FaTimes,
+} from "react-icons/fa";
 import { fileToBase64 } from "../../utils/fileBase64";
 import "./AddCourse.css";
 
@@ -48,7 +56,9 @@ const TopRightAlert = ({ show, variant, message, onClose }) => {
         <Toast.Body className="d-flex align-items-center justify-content-between text-white p-3">
           <div className="d-flex align-items-center">
             {iconMap[variant]}
-            <span style={{ fontSize: "14px", fontWeight: "500" }}>{message}</span>
+            <span style={{ fontSize: "14px", fontWeight: "500" }}>
+              {message}
+            </span>
           </div>
           <FaTimes
             className="ms-3"
@@ -513,6 +523,62 @@ const AddCourse = () => {
                     </div>
                   )}
                 </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Check
+                    type="checkbox"
+                    label="Assign to all new Employees by default"
+                    checked={course.isDefault}
+                    onChange={(e) =>
+                      setCourse((prev) => ({
+                        ...prev,
+                        isDefault: e.target.checked,
+                      }))
+                    }
+                  />
+                </Form.Group>
+                {/* <Form.Group className="mb-3">
+                  <Form.Check
+                    type="checkbox"
+                    label="Make this course recurring"
+                    checked={course.isRecurring}
+                    onChange={(e) =>
+                      setCourse((prev) => ({
+                        ...prev,
+                        isRecurring: e.target.checked,
+                      }))
+                    }
+                  />
+                  {course.isRecurring && (
+                    <Form.Control
+                      type="datetime-local"
+                      value={
+                        course.recurringNextDate
+                          ? (() => {
+                              // Convert to local datetime-local format
+                              const d = new Date(course.recurringNextDate);
+                              d.setMinutes(
+                                d.getMinutes() - d.getTimezoneOffset()
+                              );
+                              return d.toISOString().slice(0, 16);
+                            })()
+                          : ""
+                      }
+                      onChange={(e) => {
+                        // Save as ISO string in local time
+                        const local = e.target.value;
+                        setCourse((prev) => ({
+                          ...prev,
+                          recurringNextDate: local
+                            ? new Date(local).toISOString()
+                            : "",
+                        }));
+                      }}
+                      placeholder="Next recurring date & time"
+                      className="mt-2"
+                      required
+                    />
+                  )}
+                </Form.Group> */}
               </Card.Body>
             </Card>
 
@@ -910,7 +976,7 @@ const AddCourse = () => {
                 )}
               </Button>
             </div>
-          </Form> 
+          </Form>
         </Col>
       </Row>
     </Container>
