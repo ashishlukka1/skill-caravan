@@ -334,7 +334,6 @@ router.post("/:id/enroll", authMiddleware, async (req, res) => {
       ) {
         throw new Error("Already enrolled in this course");
       }
-
       const enrollment = {
         course: course._id,
         enrolledAt: new Date(),

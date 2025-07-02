@@ -2,8 +2,7 @@ const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
 const { authMiddleware, isAdmin } = require("../middleware/auth");
-  const Course = require("../models/Course");
-
+const Course = require("../models/Course");
 
 async function reassignRecurringCourses(userId) {
   const user = await User.findById(userId);
@@ -17,34 +16,43 @@ async function reassignRecurringCourses(userId) {
       enrollment.nextDueDate &&
       new Date() >= new Date(enrollment.nextDueDate)
     ) {
-      // Reset progress/status/unitProgress EVERY time the due date is hit
-      enrollment.status = "active";
-      enrollment.progress = 0;
-      enrollment.unitsProgress = (course.units || []).map((unit, unitIndex) => ({
-        unitIndex,
-        completed: false,
-        lessonsCompleted: (unit.lessons || []).map((_, lessonIndex) => ({
-          lessonIndex,
-          completed: false,
-          resourcesProgress: [],
-          lastAccessed: new Date(),
-        })),
-        assignment:
-          unit.assignment?.assignmentSets?.length > 0
-            ? {
-                assignedSetNumber: null,
-                status: "not_started",
-                submission: [],
-                score: 0,
-                attemptCount: 0,
-                questionsProgress: [],
-                lastAccessed: new Date(),
-              }
-            : null,
-        lastAccessed: new Date(),
-      }));
-      enrollment.nextDueDate = course.recurringNextDate;
-      changed = true;
+      // Only reset if user completed BEFORE the current nextDueDate
+      if (
+        enrollment.status === "completed" &&
+        enrollment.completedAt &&
+        new Date(enrollment.completedAt) < new Date(enrollment.nextDueDate)
+      ) {
+        enrollment.status = "active";
+        enrollment.progress = 0;
+        enrollment.unitsProgress = (course.units || []).map(
+          (unit, unitIndex) => ({
+            unitIndex,
+            completed: false,
+            lessonsCompleted: (unit.lessons || []).map((_, lessonIndex) => ({
+              lessonIndex,
+              completed: false,
+              resourcesProgress: [],
+              lastAccessed: new Date(),
+            })),
+            assignment:
+              unit.assignment?.assignmentSets?.length > 0
+                ? {
+                    assignedSetNumber: null,
+                    status: "not_started",
+                    submission: [],
+                    score: 0,
+                    attemptCount: 0,
+                    questionsProgress: [],
+                    lastAccessed: new Date(),
+                  }
+                : null,
+            lastAccessed: new Date(),
+          })
+        );
+        enrollment.nextDueDate = course.recurringNextDate;
+        changed = true;
+      }
+      // If not completed, or completed after the due date, do nothing (do not reset)
     } else if (
       course &&
       course.isRecurring &&
@@ -52,7 +60,9 @@ async function reassignRecurringCourses(userId) {
       !enrollment.nextDueDate
     ) {
       // First time setup: only set nextDueDate if it's in the future
-      if (new Date(course.recurringNextDate) > new Date(enrollment.enrolledAt)) {
+      if (
+        new Date(course.recurringNextDate) > new Date(enrollment.enrolledAt)
+      ) {
         enrollment.nextDueDate = course.recurringNextDate;
         changed = true;
       }
@@ -63,13 +73,6 @@ async function reassignRecurringCourses(userId) {
     await user.save();
   }
 }
-
-
-// Add this to server/routes/User.js for quick testing (remove after demo)
-router.post("/force-reassign", async (req, res) => {
-  await reassignRecurringCourses(req.body.userId);
-  res.json({ message: "Reassignment checked" });
-});
 
 // Get logged-in user's profile
 router.get("/profile", authMiddleware, (req, res) => {
@@ -226,7 +229,6 @@ router.patch(
     }
   }
 );
-
 
 module.exports = router;
 module.exports.reassignRecurringCourses = reassignRecurringCourses;

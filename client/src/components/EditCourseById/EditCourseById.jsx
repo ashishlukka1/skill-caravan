@@ -59,7 +59,7 @@ const ResourceModal = ({ resource, show, onHide, onComplete }) => {
       dialogClassName="resource-video-modal"
       backdrop={isVideo ? "static" : true}
       keyboard={!isVideo ? true : false}
-      style={{ maxWidth: "98vw" }} 
+      style={{ maxWidth: "98vw" }}
     >
       <Modal.Header closeButton>
         <Modal.Title>{resource.title}</Modal.Title>
@@ -1070,30 +1070,34 @@ const EditCourseById = () => {
                   />
                   {course.isRecurring && (
                     // ...inside the recurring date input...
-<Form.Control
-  type="datetime-local"
-  value={
-    course.recurringNextDate
-      ? (() => {
-          // Convert to local datetime-local format
-          const d = new Date(course.recurringNextDate);
-          d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-          return d.toISOString().slice(0, 16);
-        })()
-      : ""
-  }
-  onChange={e => {
-    // Save as ISO string in local time
-    const local = e.target.value;
-    setCourse(prev => ({
-      ...prev,
-      recurringNextDate: local ? new Date(local).toISOString() : "",
-    }));
-  }}
-  placeholder="Next recurring date & time"
-  className="mt-2"
-  required
-/>
+                    <Form.Control
+                      type="datetime-local"
+                      value={
+                        course.recurringNextDate
+                          ? (() => {
+                              // Convert to local datetime-local format
+                              const d = new Date(course.recurringNextDate);
+                              d.setMinutes(
+                                d.getMinutes() - d.getTimezoneOffset()
+                              );
+                              return d.toISOString().slice(0, 16);
+                            })()
+                          : ""
+                      }
+                      onChange={(e) => {
+                        // Save as ISO string in local time
+                        const local = e.target.value;
+                        setCourse((prev) => ({
+                          ...prev,
+                          recurringNextDate: local
+                            ? new Date(local).toISOString()
+                            : "",
+                        }));
+                      }}
+                      placeholder="Next recurring date & time"
+                      className="mt-2"
+                      required
+                    />
                   )}
                 </Form.Group>
                 {hasCertificate ? (
@@ -1115,7 +1119,7 @@ const EditCourseById = () => {
                     </div>
                     <Button
                       variant="outline-info"
-                      onClick={() =>  
+                      onClick={() =>
                         navigate(`/edit-courses/${id}/certificate-upload`)
                       }
                     >
@@ -1379,7 +1383,7 @@ const EditCourseById = () => {
                     </div>
                     {/* Assignment Sets */}
                     <div className="mt-4">
-                      <h5 className="mb-2">Assignment Sets</h5>
+                      <h5 className="mb-2">Assessment Sets</h5>
                       <Accordion alwaysOpen>
                         {unit.assignment.assignmentSets.map((set, setIndex) => (
                           <Accordion.Item
@@ -1405,7 +1409,7 @@ const EditCourseById = () => {
                                         )
                                       }
                                       required
-                                      placeholder="Assignment Set Title"
+                                      placeholder="Assessment Set Title"
                                     />
                                   </Form.Group>
                                 </Col>
@@ -1438,7 +1442,7 @@ const EditCourseById = () => {
                                     )
                                   }
                                   rows={2}
-                                  placeholder="Assignment Set Description"
+                                  placeholder="Assessment Set Description"
                                 />
                               </Form.Group>
                               <Form.Group className="mb-2">
@@ -1599,7 +1603,7 @@ const EditCourseById = () => {
                           size="sm"
                           onClick={() => handleAddAssignmentSet(unitIndex)}
                         >
-                          <FaPlus className="me-1" /> Add Assignment Set
+                          <FaPlus className="me-1" /> Add Assessment Set
                         </Button>
                       </div>
                     </div>

@@ -719,7 +719,7 @@ const AddCourse = () => {
                     </div>
                     {/* Assignment Sets */}
                     <div className="mt-4">
-                      <h5 className="mb-2">Assignment Sets</h5>
+                      <h5 className="mb-2">Assessment Sets</h5>
                       <Accordion alwaysOpen>
                         {unit.assignment.assignmentSets.map((set, setIndex) => (
                           <Accordion.Item
@@ -745,7 +745,7 @@ const AddCourse = () => {
                                         )
                                       }
                                       required
-                                      placeholder="Assignment Set Title"
+                                      placeholder="Assessment Set Title"
                                     />
                                   </Form.Group>
                                 </Col>
@@ -778,7 +778,7 @@ const AddCourse = () => {
                                     )
                                   }
                                   rows={2}
-                                  placeholder="Assignment Set Description"
+                                  placeholder="Assessment Set Description"
                                 />
                               </Form.Group>
                               <Form.Group className="mb-2">
@@ -939,7 +939,7 @@ const AddCourse = () => {
                           size="sm"
                           onClick={() => handleAddAssignmentSet(unitIndex)}
                         >
-                          <FaPlus className="me-1" /> Add Assignment Set
+                          <FaPlus className="me-1" /> Add Assessment Set
                         </Button>
                       </div>
                     </div>
