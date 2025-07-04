@@ -10,7 +10,7 @@ import "./AddCourse.css";
 const defaultLesson = () => ({
   title: "",
   content: "",
-  duration: "",
+  duration: ""+1,
 });
 
 const defaultQuestion = () => ({
@@ -114,12 +114,13 @@ const AddCourse = () => {
   };
 
   const handleLessonChange = (unitIndex, lessonIndex, field, value) => {
-    setCourse((prev) => {
-      const updatedUnits = [...prev.units];
-      updatedUnits[unitIndex].lessons[lessonIndex][field] = value;
-      return { ...prev, units: updatedUnits };
-    });
-  };
+  setCourse((prev) => {
+    const updatedUnits = [...prev.units];
+    updatedUnits[unitIndex].lessons[lessonIndex][field] =
+      field === "duration" ? Number(value) : value;
+    return { ...prev, units: updatedUnits };
+  });
+};
 
   const handleAddAssignmentSet = (unitIndex) => {
     setCourse((prev) => {

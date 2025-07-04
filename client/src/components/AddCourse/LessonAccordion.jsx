@@ -8,7 +8,8 @@ const LessonAccordion = ({
   handleAddLesson,
   handleRemoveLesson,
   handleLessonChange,
-  renderLessonExtra, // <-- NEW
+  renderLessonExtra,
+  readOnly, // <-- add this prop
 }) => (
   <>
     <h5 className="mt-3 mb-2">Lessons</h5>
@@ -21,20 +22,23 @@ const LessonAccordion = ({
           unitIndex={unitIndex}
           handleRemoveLesson={handleRemoveLesson}
           handleLessonChange={handleLessonChange}
-          renderLessonExtra={renderLessonExtra} // <-- NEW
+          renderLessonExtra={renderLessonExtra}
+          readOnly={readOnly} // <-- pass down
         />
       ))}
     </Accordion>
-    <div className="my-2 text-end">
-      <Button
-        variant="outline-success"
-        size="sm"
-        onClick={() => handleAddLesson(unitIndex)}
-        type="button"
-      >
-        Add Lesson
-      </Button>
-    </div>
+    {!readOnly && (
+      <div className="my-2 text-end">
+        <Button
+          variant="outline-success"
+          size="sm"
+          onClick={() => handleAddLesson(unitIndex)}
+          type="button"
+        >
+          Add Lesson
+        </Button>
+      </div>
+    )}
   </>
 );
 

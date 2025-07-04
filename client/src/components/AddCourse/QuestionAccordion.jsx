@@ -9,6 +9,7 @@ const QuestionAccordion = ({
   handleAddQuestion,
   handleRemoveQuestion,
   handleQuestionChange,
+  readOnly, // <-- add this prop
 }) => (
   <>
     <h6 className="mt-3 mb-2">Questions</h6>
@@ -22,18 +23,21 @@ const QuestionAccordion = ({
           unitIndex={unitIndex}
           handleRemoveQuestion={handleRemoveQuestion}
           handleQuestionChange={handleQuestionChange}
+          readOnly={readOnly} // <-- pass down
         />
       ))}
     </Accordion>
-    <div className="my-2 text-end">
-      <Button
-        variant="outline-success"
-        size="sm"
-        onClick={() => handleAddQuestion(unitIndex, setIndex)}
-      >
-        <FaPlus className="me-1" /> Add Question
-      </Button>
-    </div>
+    {!readOnly && (
+      <div className="my-2 text-end">
+        <Button
+          variant="outline-success"
+          size="sm"
+          onClick={() => handleAddQuestion(unitIndex, setIndex)}
+        >
+          <FaPlus className="me-1" /> Add Question
+        </Button>
+      </div>
+    )}
   </>
 );
 

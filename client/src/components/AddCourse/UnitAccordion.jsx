@@ -7,7 +7,8 @@ const UnitAccordion = ({
   handleAddUnit,
   handleRemoveUnit,
   handleUnitChange,
-  renderLessonExtra, // <-- NEW
+  renderLessonExtra,
+  readOnly, // <-- add this prop
   ...lessonAndAssignmentHandlers
 }) => (
   <>
@@ -21,15 +22,18 @@ const UnitAccordion = ({
           handleRemoveUnit={handleRemoveUnit}
           handleUnitChange={handleUnitChange}
           renderLessonExtra={renderLessonExtra}
+          readOnly={readOnly} // <-- pass down
           {...lessonAndAssignmentHandlers}
         />
       ))}
     </Accordion>
-    <div className="my-3 text-end">
-      <Button variant="outline-success" onClick={handleAddUnit}>
-        <FaPlus className="me-1" /> Add Unit
-      </Button>
-    </div>
+    {!readOnly && (
+      <div className="my-3 text-end">
+        <Button variant="outline-success" onClick={handleAddUnit}>
+          <FaPlus className="me-1" /> Add Unit
+        </Button>
+      </div>
+    )}
   </>
 );
 

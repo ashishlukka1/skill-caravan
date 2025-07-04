@@ -10,9 +10,6 @@ import {
   ProgressBar,
   Card,
   Accordion,
-  Modal,
-  Toast,
-  ToastContainer,
 } from "react-bootstrap";
 import {
   FaLock,
@@ -20,273 +17,21 @@ import {
   FaChevronRight,
   FaPlay,
   FaFile,
-  FaInfoCircle,
-  FaCheck,
-  FaTimesCircle,
-  FaTimes,
   FaClock,
-  FaCertificate,
 } from "react-icons/fa";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "../../utils/axios";
-import { AuthContext } from "../../context/AuthContext";
+import { AuthContext } from "../../../context/AuthContext";
+import Loading from "../../../utils/Loading";
+import TopRightAlert from "../../../utils/TopRightAlert";
+import ResourceModal from "../../../utils/ResourceModal";
+import {
+  fetchCourseAndProgress,
+  handleEnroll as enrollHandler,
+  handleLessonComplete as lessonCompleteHandler,
+  handleAssignmentStart as assignmentStartHandler,
+} from "./CourseDetail.handlers";
 import "./CourseDetail.css";
-import "../Courses/Courses.css";
-
-// --- Skeleton Loader for Course Detail ---
-const CourseDetailSkeleton = () => (
-  <div className="course-detail-page min-vh-100 mt-5">
-    <Container>
-      <Row className="align-items-center mb-4">
-        <Col md={8}>
-          <div
-            className="skeleton skeleton-title"
-            style={{ width: "60%", height: 36, marginBottom: 16 }}
-          />
-          <div
-            className="skeleton skeleton-desc"
-            style={{ width: "90%", height: 18, marginBottom: 16 }}
-          />
-          <div
-            className="skeleton skeleton-stat"
-            style={{ width: 120, height: 16, marginBottom: 8 }}
-          />
-          <div
-            className="skeleton skeleton-stat"
-            style={{ width: 80, height: 16, marginBottom: 8 }}
-          />
-          <div
-            className="skeleton skeleton-stat"
-            style={{ width: 100, height: 16, marginBottom: 8 }}
-          />
-          <div
-            className="skeleton skeleton-btn"
-            style={{ width: 180, height: 24, marginTop: 16 }}
-          />
-        </Col>
-        <Col md={4} className="text-end">
-          <div
-            className="skeleton skeleton-img"
-            style={{ width: "100%", minHeight: 160, borderRadius: 12 }}
-          />
-        </Col>
-      </Row>
-      <Row>
-        <Col md={4} lg={3}>
-          <div
-            className="skeleton skeleton-title"
-            style={{ width: "80%", height: 22, marginBottom: 16 }}
-          />
-          {Array.from({ length: 3 }).map((_, idx) => (
-            <div
-              key={idx}
-              className="skeleton skeleton-desc"
-              style={{
-                width: "100%",
-                height: 32,
-                marginBottom: 12,
-                borderRadius: 8,
-              }}
-            />
-          ))}
-        </Col>
-        <Col md={8} lg={9}>
-          <div
-            className="skeleton skeleton-title"
-            style={{ width: "60%", height: 22, marginBottom: 16 }}
-          />
-          {Array.from({ length: 2 }).map((_, idx) => (
-            <div
-              key={idx}
-              className="skeleton skeleton-desc"
-              style={{
-                width: "100%",
-                height: 60,
-                marginBottom: 18,
-                borderRadius: 8,
-              }}
-            />
-          ))}
-        </Col>
-      </Row>
-    </Container>
-  </div>
-);
-
-// --- Top-Right Alert Component ---
-const TopRightAlert = ({ show, variant, message, onClose }) => {
-  const iconMap = {
-    success: <FaCheckCircle className="me-2" />,
-    error: <FaTimesCircle className="me-2" />,
-    info: <FaInfoCircle className="me-2" />,
-  };
-  const backgroundMap = {
-    success: "#4CAF50",
-    error: "#F44336",
-    info: "#2196F3",
-  };
-  return (
-    <ToastContainer position="top-end" className="p-3" style={{ zIndex: 1060 }}>
-      <Toast
-        show={show}
-        onClose={onClose}
-        delay={4000}
-        autohide
-        style={{
-          backgroundColor: backgroundMap[variant],
-          border: "none",
-          borderRadius: "12px",
-          minWidth: "300px",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-        }}
-      >
-        <Toast.Body className="d-flex align-items-center justify-content-between text-white p-3">
-          <div className="d-flex align-items-center">
-            {/* {iconMap[variant]} */}
-            <span style={{ fontSize: "13px", fontWeight: "500" }}>
-              {message}
-            </span>
-          </div>
-          {/* <FaTimes
-            className="ms-3"
-            style={{ cursor: "pointer", fontSize: "12px" }}
-            onClick={onClose}
-          /> */}
-        </Toast.Body>
-      </Toast>
-    </ToastContainer>
-  );
-};
-
-// --- Resource Modal ---
-// --- Resource Modal ---
-const ResourceModal = ({ resource, show, onHide, onComplete }) => {
-  if (!resource) return null;
-  const isVideo =
-    resource.type === "video_file" || resource.type === "video_url";
-  const isYouTubeUrl = (url) =>
-    url.includes("youtube.com") || url.includes("youtu.be");
-  const getYouTubeEmbedUrl = (url) => {
-    if (url.includes("youtube.com")) {
-      const urlObj = new URL(url);
-      const videoId = urlObj.searchParams.get("v");
-      return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
-    }
-    if (url.includes("youtu.be")) {
-      const videoId = url.split("/").pop();
-      return `https://www.youtube.com/embed/${videoId}`;
-    }
-    return url;
-  };
-  return (
-    <Modal
-      show={show}
-      onHide={onHide}
-      size="xl" // <-- Make modal extra large
-      centered
-      dialogClassName="resource-video-modal"
-      backdrop={isVideo ? "static" : true}
-      keyboard={!isVideo ? true : false}
-      style={{ maxWidth: "98vw" }} // <-- Prevent overflow on very small screens
-    >
-      <Modal.Header closeButton>
-        <Modal.Title>{resource.title}</Modal.Title>
-      </Modal.Header>
-      <Modal.Body
-        style={{
-          padding: 0,
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: 0,
-          background: "#0001",
-        }}
-      >
-        {resource.type === "video_url" && (
-          <div
-            style={{
-              width: "100%",
-              maxWidth: "900px",
-              aspectRatio: "16/9",
-              margin: "auto",
-            }}
-          >
-            <iframe
-              src={
-                isYouTubeUrl(resource.url)
-                  ? getYouTubeEmbedUrl(resource.url)
-                  : resource.url
-              }
-              title={resource.title}
-              allowFullScreen
-              style={{
-                border: 0,
-                width: "100%",
-                height: "100%",
-                minHeight: 320,
-                background: "#000",
-              }}
-            ></iframe>
-          </div>
-        )}
-        {resource.type === "video_file" && resource.url && (
-          <div
-            style={{
-              width: "100%",
-              maxWidth: "900px",
-              aspectRatio: "16/9",
-              margin: "auto",
-              display: "flex",
-              justifyContent: "center",
-            }}
-          >
-            <video
-              style={{
-                width: "100%",
-                height: "100%",
-                maxHeight: "70vh",
-                borderRadius: 8,
-                background: "#000",
-              }}
-              controls
-            >
-              <source
-                src={resource.url}
-                type={resource.fileDetails?.contentType || "video/mp4"}
-              />
-              Your browser does not support the video tag.
-            </video>
-          </div>
-        )}
-        {resource.type === "document" &&
-          resource.url &&
-          !resource.url.startsWith("data:application/pdf") && (
-            <a
-              href={resource.url}
-              download={resource.fileDetails?.originalName || resource.title}
-              className="btn btn-primary m-4"
-            >
-              <FaFile className="me-2" />
-              Download Document
-            </a>
-          )}
-        {resource.type === "document_url" && (
-          <div className="text-center w-100 my-4">
-            <a
-              href={resource.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-primary"
-            >
-              <FaFile className="me-2" />
-              Open Document
-            </a>
-          </div>
-        )}
-      </Modal.Body>
-    </Modal>
-  );
-};
+import "../../Courses/Courses.css";
 
 const CourseDetail = () => {
   const [course, setCourse] = useState(null);
@@ -303,9 +48,6 @@ const CourseDetail = () => {
   const [alertType, setAlertType] = useState("info");
   const [alertMsg, setAlertMsg] = useState("");
 
-  // Certificate alert
-  const [showCertAlert, setShowCertAlert] = useState(false);
-
   const [markingLesson, setMarkingLesson] = useState({});
   const [error, setError] = useState("");
   const { id } = useParams();
@@ -313,38 +55,15 @@ const CourseDetail = () => {
   const { user } = useContext(AuthContext);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const courseRes = await axios.get(`/api/courses/${id}`);
-        setCourse(courseRes.data);
-
-        if (user) {
-          const isUserEnrolled = courseRes.data.studentsEnrolled.includes(
-            user._id
-          );
-          setIsEnrolled(isUserEnrolled);
-
-          if (isUserEnrolled) {
-            try {
-              const progressRes = await axios.get(`/api/progress/${id}`);
-              setProgress(progressRes.data);
-            } catch (progressErr) {
-              setError("Error fetching progress");
-            }
-          }
-        } else {
-          setIsEnrolled(false);
-        }
-      } catch (err) {
-        setError("Failed to load course details");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    fetchCourseAndProgress(
+      id,
+      user,
+      setCourse,
+      setProgress,
+      setIsEnrolled,
+      setError,
+      setLoading
+    );
     // eslint-disable-next-line
   }, [id, user]);
 
@@ -360,70 +79,52 @@ const CourseDetail = () => {
       certificate &&
       certificate.certificateUrl
     ) {
-      setShowCertAlert(true);
       setAlertType("success");
       setAlertMsg("Congratulations! Your certificate has been issued.");
       setShowAlert(true);
-      const timer = setTimeout(() => setShowCertAlert(false), 10000);
+      const timer = setTimeout(() => setShowAlert(false), 10000);
       return () => clearTimeout(timer);
     }
   }, [progress, certificate]);
 
-  const handleEnroll = async () => {
-    if (!user) {
-      navigate("/login");
-      return;
-    }
-    setEnrolling(true);
-    try {
-      const enrollRes = await axios.post(`/api/courses/${id}/enroll`);
-      if (enrollRes.data.enrollment) {
-        setProgress(enrollRes.data.enrollment);
-        setIsEnrolled(true);
-        const courseRes = await axios.get(`/api/courses/${id}`);
-        setCourse(courseRes.data);
-        setAlertType("success");
-        setAlertMsg("Successfully enrolled in course!");
-        setShowAlert(true);
-      }
-    } catch (err) {
-      const errorMessage =
-        err.response?.data?.message || "Failed to enroll in course";
-      setAlertType("error");
-      setAlertMsg(errorMessage);
-      setShowAlert(true);
-    } finally {
-      setEnrolling(false);
-    }
-  };
+  const handleEnroll = () =>
+    enrollHandler(
+      id,
+      user,
+      navigate,
+      setEnrolling,
+      setProgress,
+      setIsEnrolled,
+      setCourse,
+      setAlertType,
+      setAlertMsg,
+      setShowAlert
+    );
 
-  const handleLessonComplete = async (unitIdx, lessonIdx) => {
-    if (!isEnrolled) return;
-    setMarkingLesson((prev) => ({
-      ...prev,
-      [`${unitIdx}-${lessonIdx}`]: true,
-    }));
-    try {
-      await axios.post(
-        `/api/progress/${id}/unit/${unitIdx}/lesson/${lessonIdx}`,
-        { completed: true }
-      );
-      const progressRes = await axios.get(`/api/progress/${id}`);
-      setProgress(progressRes.data);
-      setAlertType("success");
-      setAlertMsg("Lesson marked as complete!");
-      setShowAlert(true);
-    } catch (err) {
-      setAlertType("error");
-      setAlertMsg("Failed to update lesson progress");
-      setShowAlert(true);
-    } finally {
-      setMarkingLesson((prev) => ({
-        ...prev,
-        [`${unitIdx}-${lessonIdx}`]: false,
-      }));
-    }
-  };
+  const handleLessonComplete = (unitIdx, lessonIdx) =>
+    lessonCompleteHandler(
+      id,
+      unitIdx,
+      lessonIdx,
+      isEnrolled,
+      setMarkingLesson,
+      setProgress,
+      setAlertType,
+      setAlertMsg,
+      setShowAlert
+    );
+
+  const handleAssignmentStart = (unitIdx) =>
+    assignmentStartHandler(
+      id,
+      course,
+      unitIdx,
+      isEnrolled,
+      setAlertType,
+      setAlertMsg,
+      setShowAlert,
+      setProgress
+    );
 
   const handleResourceComplete = async (unitIdx, lessonIdx, resourceId) => {
     if (!isEnrolled) return;
@@ -449,43 +150,7 @@ const CourseDetail = () => {
     }
   };
 
-  const handleAssignmentStart = async (unitIdx) => {
-    if (!isEnrolled) return;
-    try {
-      const unit = course.units[unitIdx];
-      const assignmentSets = unit.assignment?.assignmentSets;
-      if (!assignmentSets?.length) {
-        setAlertType("error");
-        setAlertMsg("No assignment sets available");
-        setShowAlert(true);
-        return;
-      }
-      const randomSetNumber =
-        assignmentSets.length === 1
-          ? assignmentSets[0].setNumber
-          : assignmentSets[Math.floor(Math.random() * assignmentSets.length)]
-              .setNumber;
-
-      const response = await axios.post(
-        `/api/progress/${id}/unit/${unitIdx}/assign-set`,
-        { setNumber: randomSetNumber }
-      );
-      setProgress(response.data);
-      setAlertType("success");
-      setAlertMsg("Assignment started!");
-      setShowAlert(true);
-    } catch (err) {
-      setAlertType("error");
-      setAlertMsg("Failed to assign assignment set");
-      setShowAlert(true);
-    }
-  };
-
-  const handleResourceClick = (resource, unitIdx, lessonIdx, resourceIdx) => {
-    setSelectedResource({ ...resource, unitIdx, lessonIdx, resourceIdx });
-    setShowResourceModal(true);
-  };
-
+  // --- Stats helpers (local, or move to a separate file if desired) ---
   const areAllLessonsCompleted = (unitIdx) => {
     const unitProgress = progress?.unitsProgress?.[unitIdx];
     const unit = course?.units?.[unitIdx];
@@ -496,24 +161,6 @@ const CourseDetail = () => {
     );
   };
 
-  // Helper to get the total possible score for the assigned set
-  const getAssignedSetTotalScore = (unit, unitProgress) => {
-    if (!unit || !unit.assignment?.assignmentSets?.length) return 0;
-    const assignedSetNumber = unitProgress?.assignment?.assignedSetNumber;
-    let assignedSet;
-    if (assignedSetNumber) {
-      assignedSet = unit.assignment.assignmentSets.find(
-        (set) => set.setNumber === assignedSetNumber
-      );
-    } else if (unit.assignment.assignmentSets.length === 1) {
-      assignedSet = unit.assignment.assignmentSets[0];
-    }
-    return assignedSet
-      ? assignedSet.questions.reduce((acc, q) => acc + q.marks, 0)
-      : 0;
-  };
-
-  // Helper to check if assignment is perfectly completed
   const isAssignmentPerfect = (unit, unitProgress) => {
     if (!unit || !unitProgress?.assignment) return false;
     let assignedSet;
@@ -548,6 +195,59 @@ const CourseDetail = () => {
     return "Continue Assignment";
   };
 
+  // --- RENDER LOGIC ---
+
+  if (loading) {
+    return <Loading message="Loading course details..." />;
+  }
+
+  if (error || !course) {
+    return (
+      <Container className="mt-4">
+        <Alert variant="danger">{error || "Course not found"}</Alert>
+      </Container>
+    );
+  }
+
+  // Only allow enrolled users to see content
+  if (!isEnrolled) {
+    return (
+      <Container className="mt-4 mb-4 min-vh-100 d-flex justify-content-center align-items-center">
+        <Card className="course-preview-card p-2">
+          <Card.Body className="text-center">
+            <FaLock className="preview-lock-icon mb-3" size={40} />
+            <h3>Course Content Locked</h3>
+            <p className="text-muted">
+              Enroll in this course to access all lessons and assessments.
+            </p>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleEnroll}
+              disabled={enrolling}
+            >
+              {enrolling ? "Enrolling..." : "Enroll Now"}
+            </Button>
+          </Card.Body>
+        </Card>
+        <TopRightAlert
+          show={showAlert}
+          variant={alertType}
+          message={alertMsg}
+          onClose={() => setShowAlert(false)}
+        />
+      </Container>
+    );
+  }
+
+  // Defensive: check units array
+  const hasUnits = Array.isArray(course?.units) && course.units.length > 0;
+  const unit = hasUnits ? course.units[selectedUnit] : null;
+  const unitProgress = progress?.unitsProgress?.[selectedUnit];
+  const isUnitUnlocked =
+    selectedUnit === 0 ||
+    progress?.unitsProgress?.[selectedUnit - 1]?.completed;
+
   const renderAssignment = (unit, unitIdx) => {
     if (!unit.assignment?.assignmentSets?.length) return null;
     const unitProgress = progress?.unitsProgress?.[unitIdx];
@@ -562,9 +262,6 @@ const CourseDetail = () => {
     } else if (unit.assignment.assignmentSets.length === 1) {
       assignedSet = unit.assignment.assignmentSets[0];
     }
-    const totalScore = assignedSet
-      ? assignedSet.questions.reduce((acc, q) => acc + q.marks, 0)
-      : 0;
     const assignmentPerfect = isAssignmentPerfect(unit, unitProgress);
     const assignmentSubmitted = isAssignmentSubmitted(unitProgress);
 
@@ -643,59 +340,6 @@ const CourseDetail = () => {
       </div>
     );
   };
-
-  // --- RENDER LOGIC ---
-
-  if (loading) {
-    return <CourseDetailSkeleton />;
-  }
-
-  if (error || !course) {
-    return (
-      <Container className="mt-4">
-        <Alert variant="danger">{error || "Course not found"}</Alert>
-      </Container>
-    );
-  }
-
-  // Only allow enrolled users to see content
-  if (!isEnrolled) {
-    return (
-      <Container className="mt-4 mb-4 min-vh-100 d-flex justify-content-center align-items-center">
-        <Card className="course-preview-card p-2">
-          <Card.Body className="text-center">
-            <FaLock className="preview-lock-icon mb-3" size={40} />
-            <h3>Course Content Locked</h3>
-            <p className="text-muted">
-              Enroll in this course to access all lessons and assessments.
-            </p>
-            <Button
-              variant="primary"
-              size="md"
-              onClick={handleEnroll}
-              disabled={enrolling}
-            >
-              {enrolling ? "Enrolling..." : "Enroll Now"}
-            </Button>
-          </Card.Body>
-        </Card>
-        <TopRightAlert
-          show={showAlert}
-          variant={alertType}
-          message={alertMsg}
-          onClose={() => setShowAlert(false)}
-        />
-      </Container>
-    );
-  }
-
-  // Defensive: check units array
-  const hasUnits = Array.isArray(course?.units) && course.units.length > 0;
-  const unit = hasUnits ? course.units[selectedUnit] : null;
-  const unitProgress = progress?.unitsProgress?.[selectedUnit];
-  const isUnitUnlocked =
-    selectedUnit === 0 ||
-    progress?.unitsProgress?.[selectedUnit - 1]?.completed;
 
   return (
     <div className="course-detail-page min-vh-100">
@@ -1006,7 +650,7 @@ const CourseDetail = () => {
         </Container>
       )}
 
-      {/* --- Certificate Alert at Bottom (one line, green, always visible after certificate is received) --- */}
+      {/* --- Certificate Alert at Bottom --- */}
       {certificate && (
         <div className="certificate-bottom-alert">
           <Container className="d-flex align-items-center justify-content-center flex-wrap">
@@ -1038,19 +682,6 @@ const CourseDetail = () => {
           setShowResourceModal(false);
           setSelectedResource(null);
         }}
-        onComplete={
-          selectedResource
-            ? () => {
-                handleResourceComplete(
-                  selectedResource.unitIdx,
-                  selectedResource.lessonIdx,
-                  selectedResource._id || selectedResource.resourceIdx
-                );
-                setShowResourceModal(false);
-                setSelectedResource(null);
-              }
-            : null
-        }
       />
     </div>
   );

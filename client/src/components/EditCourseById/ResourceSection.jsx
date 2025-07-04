@@ -13,12 +13,14 @@ const ResourceSection = ({
   handleResourceAdd,
   handleRemoveResource,
   handleResourceClick,
+  readOnly, // <-- add this prop
 }) => (
   <div className="resources-section">
     <div className="d-flex justify-content-between align-items-center mb-2">
       <h6>Resources</h6>
-      {showResourceForm.unit !== unitIndex ||
-      showResourceForm.lesson !== lessonIndex ? (
+      {!readOnly &&
+        (showResourceForm.unit !== unitIndex ||
+          showResourceForm.lesson !== lessonIndex) ? (
         <Button
           variant="outline-primary"
           size="sm"
@@ -56,16 +58,18 @@ const ResourceSection = ({
             <span className="resource-title ms-2">
               {resource.title || ""}
             </span>
-            <Button
-              variant="outline-danger"
-              size="sm"
-              className="btn-remove ms-2"
-              onClick={() =>
-                handleRemoveResource(unitIndex, lessonIndex, resourceIndex)
-              }
-            >
-              <FaTrash />
-            </Button>
+            {!readOnly && (
+              <Button
+                variant="outline-danger"
+                size="sm"
+                className="btn-remove ms-2"
+                onClick={() =>
+                  handleRemoveResource(unitIndex, lessonIndex, resourceIndex)
+                }
+              >
+                <FaTrash />
+              </Button>
+            )}
             <Button
               key={resourceIndex}
               variant="outline-secondary"
@@ -97,7 +101,8 @@ const ResourceSection = ({
         <p className="mb-0">No resources added yet</p>
       </div>
     )}
-    {showResourceForm.unit === unitIndex &&
+    {!readOnly &&
+      showResourceForm.unit === unitIndex &&
       showResourceForm.lesson === lessonIndex && (
         <ResourceForm
           unitIndex={unitIndex}

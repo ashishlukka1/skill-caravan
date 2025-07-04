@@ -8,6 +8,7 @@ const QuestionItem = ({
   unitIndex,
   handleRemoveQuestion,
   handleQuestionChange,
+  readOnly, // <-- add this prop
 }) => (
   <Accordion.Item eventKey={`q-${unitIndex}-${setIndex}-${qIdx}`}>
     <Accordion.Header>
@@ -32,6 +33,7 @@ const QuestionItem = ({
           }
           required
           placeholder="Question"
+          disabled={readOnly}
         />
       </Form.Group>
       <Form.Label>Options</Form.Label>
@@ -52,6 +54,7 @@ const QuestionItem = ({
             }}
             placeholder={`Option ${optIdx + 1}`}
             required
+            disabled={readOnly}
           />
         </Form.Group>
       ))}
@@ -68,6 +71,7 @@ const QuestionItem = ({
               setIndex
             )
           }
+          disabled={readOnly}
         >
           {q.options.map((_, idx) => (
             <option key={idx} value={idx}>
@@ -93,16 +97,19 @@ const QuestionItem = ({
           min={1}
           required
           placeholder="Marks"
+          disabled={readOnly}
         />
       </Form.Group>
       <div className="text-end">
-        <Button
-          variant="outline-danger"
-          size="sm"
-          onClick={() => handleRemoveQuestion(unitIndex, qIdx, setIndex)}
-        >
-          <FaTrash /> Remove Question
-        </Button>
+        {!readOnly && (
+          <Button
+            variant="outline-danger"
+            size="sm"
+            onClick={() => handleRemoveQuestion(unitIndex, qIdx, setIndex)}
+          >
+            <FaTrash /> Remove Question
+          </Button>
+        )}
       </div>
     </Accordion.Body>
   </Accordion.Item>

@@ -10,7 +10,7 @@
   color: white;
   padding: 2.5rem 1.5rem;
   margin-bottom: 2rem;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 .course-header h1 {
   font-size: clamp(1.75rem, 4vw, 2.5rem);
@@ -34,7 +34,7 @@
   max-width: 100%;
   height: auto;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   margin-top: 0.5rem;
 }
 
@@ -195,7 +195,7 @@
 
 /* Progress Bar */
 .progress {
-  height: 0.75rem;
+  /* height: 0.rem; */
   border-radius: 1rem;
 }
 .progress-bar {
@@ -204,9 +204,9 @@
 
 /* Badges */
 .badge {
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.75rem;
   font-weight: 500;
-  border-radius: 6px;
+  border-radius: 20px;
 }
 .unit-complete-badge {
   display: flex;
@@ -251,13 +251,25 @@
   content: "";
   display: block;
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.25),
+    transparent
+  );
   animation: skeleton-shine 1.2s infinite linear;
 }
 @keyframes skeleton-shine {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 /* Certificate Banner (like course header, but green) */

@@ -8,6 +8,7 @@ const AssignmentSetItem = ({
   unitIndex,
   handleRemoveAssignmentSet,
   handleAssignmentSetChange,
+  readOnly, // <-- add this prop
   ...questionHandlers
 }) => (
   <Accordion.Item eventKey={`set-${unitIndex}-${setIndex}`}>
@@ -29,17 +30,20 @@ const AssignmentSetItem = ({
               }
               required
               placeholder="Assessment Set Title"
+              disabled={readOnly}
             />
           </Form.Group>
         </Col>
         <Col md={2} className="text-end">
-          <Button
-            variant="outline-danger"
-            onClick={() => handleRemoveAssignmentSet(unitIndex, setIndex)}
-            size="sm"
-          >
-            <FaTrash />
-          </Button>
+          {!readOnly && (
+            <Button
+              variant="outline-danger"
+              onClick={() => handleRemoveAssignmentSet(unitIndex, setIndex)}
+              size="sm"
+            >
+              <FaTrash />
+            </Button>
+          )}
         </Col>
       </Row>
       <Form.Group className="mb-2">
@@ -57,6 +61,7 @@ const AssignmentSetItem = ({
           }
           rows={2}
           placeholder="Assessment Set Description"
+          disabled={readOnly}
         />
       </Form.Group>
       <Form.Group className="mb-2">
@@ -71,6 +76,7 @@ const AssignmentSetItem = ({
               e.target.value
             )
           }
+          disabled={readOnly}
         >
           <option value="easy">Easy</option>
           <option value="medium">Medium</option>
@@ -81,6 +87,7 @@ const AssignmentSetItem = ({
         set={set}
         setIndex={setIndex}
         unitIndex={unitIndex}
+        readOnly={readOnly} // <-- pass down
         {...questionHandlers}
       />
     </Accordion.Body>

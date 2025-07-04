@@ -7,7 +7,8 @@ const LessonItem = ({
   unitIndex,
   handleRemoveLesson,
   handleLessonChange,
-  renderLessonExtra, // <-- NEW
+  renderLessonExtra,
+  readOnly, // <-- add this prop
 }) => (
   <Accordion.Item eventKey={`lesson-${unitIndex}-${lessonIndex}`}>
     <Accordion.Header>
@@ -30,17 +31,20 @@ const LessonItem = ({
               }
               required
               placeholder="Lesson Title"
+              disabled={readOnly}
             />
           </Form.Group>
         </Col>
         <Col md={2} className="text-end">
-          <Button
-            variant="outline-danger"
-            onClick={() => handleRemoveLesson(unitIndex, lessonIndex)}
-            size="sm"
-          >
-            <FaTrash />
-          </Button>
+          {!readOnly && (
+            <Button
+              variant="outline-danger"
+              onClick={() => handleRemoveLesson(unitIndex, lessonIndex)}
+              size="sm"
+            >
+              <FaTrash />
+            </Button>
+          )}
         </Col>
       </Row>
       <Form.Group className="mb-2">
@@ -58,6 +62,7 @@ const LessonItem = ({
           }
           rows={2}
           placeholder="Lesson Content"
+          disabled={readOnly}
         />
       </Form.Group>
       <Form.Group className="mb-2">
@@ -75,6 +80,7 @@ const LessonItem = ({
           }
           min={0}
           placeholder="Duration"
+          disabled={readOnly}
         />
       </Form.Group>
       {/* Render extra content if provided */}

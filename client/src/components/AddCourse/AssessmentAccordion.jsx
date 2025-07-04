@@ -8,6 +8,7 @@ const AssignmentAccordion = ({
   handleAddAssignmentSet,
   handleRemoveAssignmentSet,
   handleAssignmentSetChange,
+  readOnly, // <-- add this prop
   ...questionHandlers
 }) => (
   <div className="mt-4">
@@ -21,19 +22,22 @@ const AssignmentAccordion = ({
           unitIndex={unitIndex}
           handleRemoveAssignmentSet={handleRemoveAssignmentSet}
           handleAssignmentSetChange={handleAssignmentSetChange}
+          readOnly={readOnly} // <-- pass down
           {...questionHandlers}
         />
       ))}
     </Accordion>
-    <div className="my-2 text-end">
-      <Button
-        variant="outline-success"
-        size="sm"
-        onClick={() => handleAddAssignmentSet(unitIndex)}
-      >
-        <FaPlus className="me-1" /> Add Assessment Set
-      </Button>
-    </div>
+    {!readOnly && (
+      <div className="my-2 text-end">
+        <Button
+          variant="outline-success"
+          size="sm"
+          onClick={() => handleAddAssignmentSet(unitIndex)}
+        >
+          <FaPlus className="me-1" /> Add Assessment Set
+        </Button>
+      </div>
+    )}
   </div>
 );
 

@@ -27,7 +27,7 @@
   color: white;
   position: sticky;
   top: 0;
-    text-align: center;
+  text-align: center;
   z-index: 1;
 }
 
@@ -45,7 +45,6 @@
   width: 30%;
 }
 
-
 .category-column {
   width: 15%;
 }
@@ -62,7 +61,7 @@
   width: 1%;
   text-align: center;
 }
-.actions-cell{
+.actions-cell {
   text-align: center;
 }
 
@@ -130,26 +129,26 @@
   .created-cell {
     display: none;
   }
-  
+
   /* Show mobile info */
   .mobile-info {
     display: block;
   }
-  
+
   /* Hide thumbnail on very small screens */
   .course-thumbnail {
     display: none;
   }
-  
+
   /* Adjust button for mobile */
   .edit-text {
     display: inline;
   }
-  
+
   .edit-icon {
     display: none;
   }
-  
+
   /* Adjust container padding */
   .edit-courses-container {
     padding: 1rem 0.5rem;
@@ -182,11 +181,11 @@
   .course-thumbnail {
     display: block;
   }
-  
+
   .edit-text {
     display: inline;
   }
-  
+
   .edit-icon {
     display: none;
   }
@@ -203,7 +202,7 @@
   .created-cell {
     display: table-cell;
   }
-  
+
   /* Hide mobile info */
   .mobile-info {
     display: none;
@@ -213,7 +212,7 @@
   .title-column {
     width: 30%;
   }
-  
+
   .actions-column {
     width: 1%;
   }
@@ -231,15 +230,12 @@
   background-color: rgba(0, 123, 255, 0.1);
 }
 
-
-
 /* Accessibility */
 @media (prefers-reduced-motion: reduce) {
   .edit-button:hover {
     transform: none;
   }
 }
-
 
 /* Skeleton Loader Styles */
 .skeleton {
@@ -252,13 +248,25 @@
   content: "";
   display: block;
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.18),
+    transparent
+  );
   animation: skeleton-shine 1.2s infinite linear;
 }
 @keyframes skeleton-shine {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 .skeleton-title {
   height: 20px;

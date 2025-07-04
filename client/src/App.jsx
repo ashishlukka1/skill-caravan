@@ -15,7 +15,7 @@ import UserRegistrationForm from "./components/UserLoginDetails/UserLoginDetails
 import ProtectedRoute from "./components/Routes/ProtectedRoute";
 import Login from "./components/Login/Login";
 import Courses from "./components/Courses/Courses";
-import CourseDetail from "./components/Courses/CourseDetail";
+import CourseDetail from "./components/Courses/CourseDetails/CourseDetail";
 import MyCourses from "./components/Courses/MyCourses";
 import Profile from "./components/Profile/Profile";
 import AssignmentQuiz from "./components/Assessments/Assessment";

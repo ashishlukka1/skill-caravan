@@ -141,9 +141,7 @@ const ValidateCertificate = () => {
           <div className="about-section">
             <h2>About this Certificate</h2>
             <p>
-              This certificate is valid and can be verified using the
-              certificate identifier provided above. It has been issued
-              specifically to the individual named, for the stated purpose.
+              This certificate is valid and may be authenticated using the unique identifier above. It has been granted to the named individual for the specified purpose.
             </p>
           </div>
         )}

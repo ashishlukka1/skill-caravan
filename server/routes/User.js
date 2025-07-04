@@ -67,12 +67,12 @@ async function reassignRecurringCourses(userId) {
   }
 }
 
-// Get logged-in user's profile
+// [Get] logged-in user's profile
 router.get("/profile", authMiddleware, (req, res) => {
   res.json(req.user);
 });
 
-// search users by name or employeeId
+// [GET] search users by name or employeeId
 router.get("/search", authMiddleware, async (req, res) => {
   try {
     const query = req.query.q;
@@ -91,10 +91,10 @@ router.get("/search", authMiddleware, async (req, res) => {
   }
 });
 
-// Update profile
+// [PATCH] Update profile    
 router.patch("/profile", authMiddleware, async (req, res) => {
   try {
-    console.log("Update request received:", req.body); // Debug log
+    console.log("Update request received:", req.body);
 
     // Only allow these fields to be updated
     const allowedFields = [
@@ -113,7 +113,7 @@ router.patch("/profile", authMiddleware, async (req, res) => {
       }
     });
 
-    console.log("Fields to update:", updates); // Debug log
+    console.log("Fields to update:", updates);
 
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ message: "No valid fields to update" });

@@ -5,8 +5,13 @@ import { Container, Row, Col, Button, Alert, Spinner } from "react-bootstrap";
 import "./Profile.css";
 
 const teamOptions = [
-  "Engineering-dev", "Engineering-Support", "IT",
-  "Administration", "Accounts", "Management", "HR"
+  "Engineering-dev",
+  "Engineering-Support",
+  "IT",
+  "Administration",
+  "Accounts",
+  "Management",
+  "HR",
 ];
 
 function Profile() {
@@ -28,7 +33,7 @@ function Profile() {
           return;
         }
         const res = await axios.get("/api/users/profile", {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
         setProfile(res.data);
       } catch (err) {
@@ -60,8 +65,8 @@ function Profile() {
       const res = await axios.patch("/api/users/profile", profile, {
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          "Content-Type": "application/json",
+        },
       });
       setSuccess("Profile updated successfully!");
       setUser(res.data.user);
@@ -79,7 +84,10 @@ function Profile() {
       } else if (err.response?.status === 403) {
         setError("Access denied.");
       } else {
-        setError(err.response?.data?.message || "Failed to update profile. Please try again.");
+        setError(
+          err.response?.data?.message ||
+            "Failed to update profile. Please try again."
+        );
       }
     } finally {
       setSaving(false);
@@ -87,7 +95,7 @@ function Profile() {
   };
 
   const handleChange = (field, value) => {
-    setProfile(prev => ({ ...prev, [field]: value }));
+    setProfile((prev) => ({ ...prev, [field]: value }));
     if (success) setSuccess("");
     if (error) setError("");
   };
@@ -108,7 +116,8 @@ function Profile() {
       <Container className="profile-container">
         <div className="text-center py-5">
           <Alert variant="danger">
-            Unable to load profile data. Please refresh the page or try again later.
+            Unable to load profile data. Please refresh the page or try again
+            later.
           </Alert>
         </div>
       </Container>
@@ -125,12 +134,14 @@ function Profile() {
             {error && <Alert variant="danger">{error}</Alert>}
             <Row className="gy-3 align-items-center">
               <Col md={6}>
-                <div className="profile-label">Name: <span className="text-danger">*</span></div>
+                <div className="profile-label">
+                  Name: <span className="text-danger">*</span>
+                </div>
                 <input
                   className="profile-value-input"
                   type="text"
                   value={profile.name || ""}
-                  onChange={e => handleChange("name", e.target.value)}
+                  onChange={(e) => handleChange("name", e.target.value)}
                   placeholder="Enter your full name"
                 />
               </Col>
@@ -141,40 +152,46 @@ function Profile() {
                 </div>
               </Col>
               <Col md={6}>
-                <div className="profile-label">Employee ID: <span className="text-danger">*</span></div>
+                <div className="profile-label">
+                  Employee ID: <span className="text-danger">*</span>
+                </div>
                 <input
                   className="profile-value-input"
                   type="text"
                   value={profile.employeeId || ""}
-                  onChange={e => handleChange("employeeId", e.target.value)}
+                  onChange={(e) => handleChange("employeeId", e.target.value)}
                   placeholder="Enter employee ID"
                 />
               </Col>
               <Col md={6}>
-                <div className="profile-label">Mobile: <span className="text-danger">*</span></div>
+                <div className="profile-label">
+                  Mobile: <span className="text-danger">*</span>
+                </div>
                 <input
-  className="profile-value-input"
-  type="tel"
-  value={profile.mobile || ""}
-  onChange={e => {
-    // Only allow digits
-    if (e.target.value === "" || /^\d+$/.test(e.target.value)) {
-      handleChange("mobile", e.target.value);
-    }
-  }}
-  placeholder="Enter mobile number"
-/>
+                  className="profile-value-input"
+                  type="tel"
+                  value={profile.mobile || ""}
+                  onChange={(e) => {
+                    // Only allow digits
+                    if (e.target.value === "" || /^\d+$/.test(e.target.value)) {
+                      handleChange("mobile", e.target.value);
+                    }
+                  }}
+                  placeholder="Enter mobile number"
+                />
               </Col>
               <Col md={6}>
                 <div className="profile-label">Team:</div>
                 <select
                   className="profile-value-input"
                   value={profile.team || ""}
-                  onChange={e => handleChange("team", e.target.value)}
+                  onChange={(e) => handleChange("team", e.target.value)}
                 >
                   <option value="">Select team</option>
-                  {teamOptions.map(team => (
-                    <option key={team} value={team}>{team}</option>
+                  {teamOptions.map((team) => (
+                    <option key={team} value={team}>
+                      {team}
+                    </option>
                   ))}
                 </select>
               </Col>
@@ -184,7 +201,7 @@ function Profile() {
                   className="profile-value-input"
                   type="text"
                   value={profile.designation || ""}
-                  onChange={e => handleChange("designation", e.target.value)}
+                  onChange={(e) => handleChange("designation", e.target.value)}
                   placeholder="Enter your designation"
                 />
               </Col>

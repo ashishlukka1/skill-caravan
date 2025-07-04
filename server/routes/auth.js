@@ -6,8 +6,6 @@ const jwt = require("jsonwebtoken");
 const Course = require("../models/Course");
 const { reassignRecurringCourses } = require("../routes/User");
 
-
-
 async function autoEnrollDefaultCourses(userId) {
   const defaultCourses = await Course.find({ isDefault: true });
   const user = await User.findById(userId);
@@ -55,10 +53,8 @@ async function autoEnrollDefaultCourses(userId) {
   await user.save();
 }
 
-
 // Register
 router.post("/register", async (req, res) => {
-
   try {
     const {
       name,
@@ -138,7 +134,7 @@ router.post("/register", async (req, res) => {
 
     await user.save();
 
-await autoEnrollDefaultCourses(user._id);
+    await autoEnrollDefaultCourses(user._id);
 
     res.status(201).json({
       message: "User registered successfully",
@@ -176,8 +172,6 @@ await autoEnrollDefaultCourses(user._id);
   }
 });
 
-
-
 // Login
 router.post("/login", async (req, res) => {
   try {
@@ -194,8 +188,6 @@ router.post("/login", async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: "Invalid password" });
-
-
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1d",
@@ -225,7 +217,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// Logout just deleting token
+// Logout (just deleting token)
 router.get("/logout", (req, res) => {
   res.json({ message: "Logged out" });
 });

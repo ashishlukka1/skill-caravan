@@ -8,7 +8,8 @@ const UnitItem = ({
   unitIndex,
   handleRemoveUnit,
   handleUnitChange,
-  renderLessonExtra, // <-- NEW
+  renderLessonExtra,
+  readOnly, // <-- add this prop
   ...lessonAndAssignmentHandlers
 }) => (
   <Accordion.Item eventKey={unitIndex.toString()}>
@@ -29,28 +30,33 @@ const UnitItem = ({
               }
               required
               placeholder="Unit Title"
+              disabled={readOnly}
             />
           </Form.Group>
         </Col>
         <Col md={2} className="text-end">
-          <Button
-            variant="outline-danger"
-            onClick={() => handleRemoveUnit(unitIndex)}
-            size="sm"
-          >
-            <FaTrash />
-          </Button>
+          {!readOnly && (
+            <Button
+              variant="outline-danger"
+              onClick={() => handleRemoveUnit(unitIndex)}
+              size="sm"
+            >
+              <FaTrash />
+            </Button>
+          )}
         </Col>
       </Row>
       <LessonAccordion
         unit={unit}
         unitIndex={unitIndex}
         renderLessonExtra={renderLessonExtra}
+        readOnly={readOnly} // <-- pass down
         {...lessonAndAssignmentHandlers}
       />
       <AssignmentAccordion
         unit={unit}
         unitIndex={unitIndex}
+        readOnly={readOnly} // <-- pass down
         {...lessonAndAssignmentHandlers}
       />
     </Accordion.Body>

@@ -846,7 +846,7 @@ router.post(
   }
 );
 
-// --- COURSE CERTIFICATE TEMPLATE UPLOAD ---
+// --- COURSE CERTIFICATE TEMPLATE UPLOAD (ADMIN) ---
 router.post(
   "/:id/certificate-template",
   authMiddleware,
@@ -896,12 +896,18 @@ router.post(
           .json({ message: "Invalid certificate text settings" });
       }
 
+      // Flatten namePosition into expected fields
+      const { nameBox, courseBox, dateBox, qrBox } = parsedNamePosition || {};
+
       course.certificate = {
         templateUrl,
         templateStoragePath,
         textSettings: {
-          namePosition: parsedNamePosition,
-          font: parsedFont,
+          nameBox: nameBox || {},
+          courseBox: courseBox || {},
+          dateBox: dateBox || {},
+          qrBox: qrBox || {},
+          font: parsedFont || {},
         },
       };
 
@@ -917,7 +923,7 @@ router.post(
         message: "Error uploading certificate template",
         error: process.env.NODE_ENV === "development" ? err.message : undefined,
       });
-    }
+ }
   }
 );
 
