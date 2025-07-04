@@ -250,28 +250,30 @@ const Home = () => {
   const [enrollments, setEnrollments] = useState([]);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        // Fetch enrollments
-        const enrollmentsResponse = await axios.get("/api/users/enrollments");
-        setEnrollments(
-          enrollmentsResponse.data?.filter((e) => e?.course) || []
-        );
-      } catch (err) {
-        setError("Failed to load data. Please try again later.");
-        console.error("Error:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (user?._id) {
-      fetchData();
+ useEffect(() => {
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // 1. Trigger recurring logic
+      await axios.post("/api/users/reassign-recurring");
+      // 2. Fetch enrollments
+      const enrollmentsResponse = await axios.get("/api/users/enrollments");
+      setEnrollments(
+        enrollmentsResponse.data?.filter((e) => e?.course) || []
+      );
+    } catch (err) {
+      setError("Failed to load data. Please try again later.");
+      console.error("Error:", err);
+    } finally {
+      setLoading(false);
     }
-  }, [user?._id]);
+  };
+
+  if (user?._id) {
+    fetchData();
+  }
+}, [user?._id]);
 
   const stats = useMemo(
     () => ({

@@ -53,6 +53,8 @@ router.get("/search", async (req, res) => {
 
     let titleMatches = await Course.find({
       title: { $regex: q, $options: "i" },
+      approvalStatus: "approved", 
+      published: true,           
     })
       .populate({ path: "instructor", select: "name" })
       .select(

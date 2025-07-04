@@ -195,7 +195,6 @@ router.post("/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: "Invalid password" });
 
-    reassignRecurringCourses(user._id).catch(console.error);
 
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {

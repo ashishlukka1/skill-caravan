@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "../../utils/axios";
 import { Container, Spinner, Row, Col } from "react-bootstrap";
-import "./ValidateCertificate.css"; // Import the custom CSS
+import "./ValidateCertificate.css";
 
 const ValidateCertificate = () => {
   const { certId } = useParams();
@@ -15,12 +15,13 @@ const ValidateCertificate = () => {
       setLoading(true);
       setError("");
       try {
-        const res = await axios.get(`/api/courses/validate-certificate/${certId}`);
+        const res = await axios.get(
+          `/api/courses/validate-certificate/${certId}`
+        );
         setCertificate(res.data);
       } catch (err) {
         setError(
-          err.response?.data?.message ||
-          "Certificate not found or invalid."
+          err.response?.data?.message || "Certificate not found or invalid."
         );
       } finally {
         setLoading(false);
@@ -87,7 +88,9 @@ const ValidateCertificate = () => {
                 <div className="detail-section">
                   <div className="detail-row">
                     <span className="detail-label">Certification:</span>
-                    <span className="detail-value">{certificate.courseTitle}</span>
+                    <span className="detail-value">
+                      {certificate.courseTitle}
+                    </span>
                   </div>
                 </div>
 
@@ -96,11 +99,14 @@ const ValidateCertificate = () => {
                     <span className="detail-label">Issue date:</span>
                     <span className="detail-value">
                       {certificate.issuedAt
-                        ? new Date(certificate.issuedAt).toLocaleDateString('en-GB', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric'
-                          })
+                        ? new Date(certificate.issuedAt).toLocaleDateString(
+                            "en-GB",
+                            {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            }
+                          )
                         : "N/A"}
                     </span>
                   </div>
@@ -108,19 +114,23 @@ const ValidateCertificate = () => {
 
                 <div className="detail-section">
                   <div className="detail-row">
-                    <span className="detail-label">This certificate was issued by:</span>
-                    <span className="detail-value">Olive Crypto Systems Pvt Ltd</span>
+                    <span className="detail-label">
+                      This certificate was issued by:
+                    </span>
+                    <span className="detail-value">
+                      Olive Crypto Systems Pvt Ltd
+                    </span>
                   </div>
                 </div>
 
                 <div className="detail-section">
                   <div className="detail-row">
                     <span className="detail-label">Certificate ID:</span>
-                    <span className="detail-value certificate-id">{certificate.certificateId}</span>
+                    <span className="detail-value certificate-id">
+                      {certificate.certificateId}
+                    </span>
                   </div>
                 </div>
-
-                
               </div>
             </Col>
           </Row>
@@ -131,7 +141,9 @@ const ValidateCertificate = () => {
           <div className="about-section">
             <h2>About this Certificate</h2>
             <p>
-              This certificate is valid and can be verified using the certificate identifier provided above. It has been issued specifically to the individual named, for the stated purpose.
+              This certificate is valid and can be verified using the
+              certificate identifier provided above. It has been issued
+              specifically to the individual named, for the stated purpose.
             </p>
           </div>
         )}

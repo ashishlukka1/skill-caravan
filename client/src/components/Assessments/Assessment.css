@@ -1,0 +1,234 @@
+/* Layout and Card */
+.assignment-quiz-main {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(44, 62, 80, 0.07);
+}
+.assignment-card {
+  background: #fff;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+  margin-top: 3rem;
+  margin-left: 3rem;
+  margin-right: 3rem;
+}
+@media (max-width: 991.98px) {
+  .assignment-card {
+    margin-left: 1rem;
+    margin-right: 1rem;
+  }
+}
+@media (max-width: 767.98px) {
+  .assignment-card {
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+    margin-top: 3rem;
+  }
+}
+@media (max-width: 575.98px) {
+  .assignment-card {
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 3rem;
+    border-radius: 0;
+  }
+}
+
+/* Header */
+.assignment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+/* Progress Bar and Dots */
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.question-dots {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.question-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #e2e8f0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.question-dot.active {
+  border-color: #3b82f6;
+  background: #3b82f6;
+  color: white;
+}
+.question-dot.answered {
+  border-color: #10b981;
+  color: #10b981;
+}
+.question-dot.answered.active {
+  background: #10b981;
+  border-color: #10b981;
+  color: white;
+}
+
+/* Question Card and Options */
+.question-card {
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+}
+.options-grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+@media (max-width: 767.98px) {
+  .options-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+}
+.option-btn,
+.options-grid .btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 1rem 1.5rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 1rem;
+  color: #1e293b;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.options-grid .btn-primary {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+.options-grid .btn-outline-primary {
+  background: #fff;
+}
+
+/* Navigation Footer */
+.navigation-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+  flex-wrap: nowrap !important;
+  flex-direction: row !important;
+  gap: 0.5rem;
+}
+@media (max-width: 767.98px) {
+  .navigation-footer {
+    flex-direction: row !important;
+    gap: 0.5rem;
+    padding-top: 1rem;
+    margin-top: 1.5rem;
+  }
+  .navigation-footer > * {
+    width: auto !important;
+    min-width: 90px;
+    margin-bottom: 0 !important;
+  }
+  .question-dots {
+    justify-content: center;
+    gap: 0.25rem;
+  }
+}
+
+/* Score Section */
+.score-section {
+  text-align: center;
+  padding: 2rem 0;
+}
+.score-circle {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 2rem;
+  font-size: 1.2rem;
+}
+.score-label {
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+.score-value {
+  font-size: 2.5rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+/* Review Section */
+.review-section {
+  text-align: left;
+}
+.question-review-card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+.question-review-card.border-success {
+  border-left: 4px solid #198754;
+}
+.question-review-card.border-danger {
+  border-left: 4px solid #dc3545;
+}
+.options-grid .option-item {
+  border: 1px solid #dee2e6;
+  transition: all 0.2s;
+}
+.options-grid .option-item.selected {
+  background-color: #f8f9fa;
+}
+.options-grid .option-item.correct {
+  border-color: #198754;
+  background-color: #d1e7dd;
+}
+.options-grid .option-item.incorrect {
+  border-color: #dc3545;
+  background-color: #f8d7da;
+}
+.option-marker {
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}

@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useRef } from "react";
-import axios from "../../utils/axios";
+import React from "react";
+import { Button } from "react-bootstrap";
+import TopRightAlert from "../../utils/TopRightAlert";
+import Loading from "../../utils/Loading";
 import {
   Container,
   Form,
   Table,
-  Spinner,
   Alert,
   Card,
   InputGroup,
@@ -12,111 +13,44 @@ import {
   Col,
 } from "react-bootstrap";
 import { FaSearch } from "react-icons/fa";
+import { useAdminDashboardHandlers } from "./AdminDashboard.handlers";
 
 const AdminDashboard = () => {
-  const [courses, setCourses] = useState([]);
-  const [courseSearch, setCourseSearch] = useState("");
-  const [showCourseResults, setShowCourseResults] = useState(false);
-  const [selectedCourseId, setSelectedCourseId] = useState("");
-  const [selectedCourseTitle, setSelectedCourseTitle] = useState("");
-  const [enrollments, setEnrollments] = useState([]);
-  const [employeeSearch, setEmployeeSearch] = useState("");
-  const [filterType, setFilterType] = useState("all");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [loading, setLoading] = useState(false);
-  const [alert, setAlert] = useState({
-    show: false,
-    message: "",
-    variant: "danger",
-  });
-
-  const courseSearchRef = useRef(null);
-
-  useEffect(() => {
-    setLoading(true);
-    axios
-      .get("/api/courses?status=approved")
-      .then((res) => setCourses(res.data.courses))
-      .catch(() =>
-        setAlert({
-          show: true,
-          message: "Failed to fetch courses",
-          variant: "danger",
-        })
-      )
-      .finally(() => setLoading(false));
-  }, []);
-
-  // Fetch enrollments for selected course
-  useEffect(() => {
-    if (!selectedCourseId) {
-      setEnrollments([]);
-      return;
-    }
-    setLoading(true);
-    axios
-      .get(`/api/courses/${selectedCourseId}/enrollments`)
-      .then((res) => setEnrollments(res.data.enrollments))
-      .catch(() =>
-        setAlert({
-          show: true,
-          message: "Failed to fetch enrollments",
-          variant: "danger",
-        })
-      )
-      .finally(() => setLoading(false));
-  }, [selectedCourseId]);
-
-  // Filter courses by search
-  const filteredCourses = courses.filter((course) =>
-    course.title.toLowerCase().includes(courseSearch.toLowerCase())
-  );
-
-  // Filter employees by name/id, assignment type, and status
-  const filteredEnrollments = enrollments.filter(
-    (enr) =>
-      (enr.name?.toLowerCase().includes(employeeSearch.toLowerCase()) ||
-        (enr.employeeId &&
-          enr.employeeId
-            .toLowerCase()
-            .includes(employeeSearch.toLowerCase()))) &&
-      (filterType === "all" ||
-        (filterType === "admin" && enr.assignedByAdmin) ||
-        (filterType === "self" && !enr.assignedByAdmin)) &&
-      (filterStatus === "all" || (enr.status && enr.status === filterStatus))
-  );
-
-  // Hide dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        courseSearchRef.current &&
-        !courseSearchRef.current.contains(event.target)
-      ) {
-        setShowCourseResults(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleCourseSelect = (course) => {
-    setSelectedCourseId(course._id);
-    setSelectedCourseTitle(course.title);
-    setCourseSearch(course.title);
-    setShowCourseResults(false);
-  };
-
-  const handleCourseSearchChange = (e) => {
-    setCourseSearch(e.target.value);
-    setShowCourseResults(true);
-    setSelectedCourseId(""); // Reset selection if typing
-    setSelectedCourseTitle("");
-  };
+  const {
+    courses,
+    courseSearch,
+    setCourseSearch,
+    showCourseResults,
+    setShowCourseResults,
+    selectedCourseId,
+    selectedCourseTitle,
+    enrollments,
+    setEnrollments,
+    employeeSearch,
+    setEmployeeSearch,
+    filterType,
+    setFilterType,
+    filterStatus,
+    setFilterStatus,
+    loading,
+    setLoading,
+    alert,
+    setAlert,
+    courseSearchRef,
+    filteredCourses,
+    filteredEnrollments,
+    handleCourseSelect,
+    handleCourseSearchChange,
+  } = useAdminDashboardHandlers();
 
   return (
     <Container className="py-4 mt-5 min-vh-100">
-      {alert.show && <Alert variant={alert.variant}>{alert.message}</Alert>}
+      <TopRightAlert
+        show={alert.show}
+        variant={alert.variant === "success" ? "success" : "error"}
+        message={alert.message}
+        onClose={() => setAlert({ ...alert, show: false })}
+      />
       <Card className="mb-4 mt-3">
         <Card.Body>
           <Row className="g-3">
@@ -235,9 +169,7 @@ const AdminDashboard = () => {
         </Card>
       )}
       {loading ? (
-        <div className="text-center py-5">
-          <Spinner animation="border" />
-        </div>
+        <Loading message="Loading..." />
       ) : selectedCourseId && filteredEnrollments.length > 0 ? (
         <Table bordered responsive>
           <thead>
@@ -249,6 +181,7 @@ const AdminDashboard = () => {
               <th>Progress (%)</th>
               <th>Assessments Taken</th>
               <th>Unit Progress</th>
+              <th>Assignment Status</th>
               <th>Assignment Type</th>
             </tr>
           </thead>
@@ -271,8 +204,7 @@ const AdminDashboard = () => {
                           {unit.assignment && (
                             <>
                               {" "}
-                              | Assignment Attempts:{" "}
-                              {unit.assignment.attemptCount || 0}
+                              | Assignment Attempts: {unit.assignment.attemptCount || 0}
                             </>
                           )}
                         </li>
@@ -282,11 +214,48 @@ const AdminDashboard = () => {
                     <span className="text-muted">No units</span>
                   )}
                 </td>
+                {/* Assignment Blocked */}
+                <td>
+                  {enr.unitsProgress && enr.unitsProgress.length > 0 ? (
+                    <ul style={{ margin: 0, paddingLeft: 18 }}>
+                      {enr.unitsProgress.map((unit, i) =>
+                        unit.assignment && unit.assignment.blocked ? (
+                          <li key={i}>
+                            <span className="text-danger">Blocked</span>
+                            <Button
+                              variant="warning"
+                              size="sm"
+                              className="ms-2"
+                              onClick={async () => {
+                                await axios.post(
+                                  `/api/progress/${selectedCourseId}/unit/${unit.unitIndex}/reset-block/${enr.userId}`
+                                );
+                                setAlert({
+                                  show: true,
+                                  message: `Assessment unblocked for ${enr.name} (Unit ${unit.unitIndex + 1})`,
+                                  variant: "success",
+                                });
+                                // Optionally, refresh enrollments:
+                                axios
+                                  .get(`/api/courses/${selectedCourseId}/enrollments`)
+                                  .then((res) => setEnrollments(res.data.enrollments))
+                                  .finally(() => setLoading(false));
+                              }}
+                            >
+                              Unblock
+                            </Button>
+                          </li>
+                        ) : null
+                      )}
+                    </ul>
+                  ) : (
+                    <span className="text-muted">-</span>
+                  )}
+                </td>
+                {/* END Assignment Blocked */}
                 <td>
                   {enr.assignedByAdmin === true ? (
-                    <span className="badge bg-info text-dark">
-                      Assigned by Admin
-                    </span>
+                    <span className="badge bg-info text-dark">Assigned by Admin</span>
                   ) : (
                     <span className="badge bg-success">Self-Enrolled</span>
                   )}

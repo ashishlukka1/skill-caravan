@@ -5,10 +5,18 @@ const { authMiddleware, isAdmin } = require("../middleware/auth");
 const Course = require("../models/Course");
 
 async function reassignRecurringCourses(userId) {
+  console.log("Running reassignRecurringCourses for", userId);
   const user = await User.findById(userId);
+
+  // Get all course IDs from enrollments
+  const courseIds = user.enrolledCourses.map(e => e.course);
+  // Fetch all courses in one go
+  const courses = await Course.find({ _id: { $in: courseIds } });
+  const courseMap = new Map(courses.map(c => [c._id.toString(), c]));
+
   let changed = false;
   for (const enrollment of user.enrolledCourses) {
-    const course = await Course.findById(enrollment.course);
+    const course = courseMap.get(enrollment.course.toString());
     if (
       course &&
       course.isRecurring &&
@@ -16,7 +24,6 @@ async function reassignRecurringCourses(userId) {
       enrollment.nextDueDate &&
       new Date() >= new Date(enrollment.nextDueDate)
     ) {
-      // Only reset if user completed BEFORE the current nextDueDate
       if (
         enrollment.status === "completed" &&
         enrollment.completedAt &&
@@ -51,21 +58,7 @@ async function reassignRecurringCourses(userId) {
         );
         enrollment.nextDueDate = course.recurringNextDate;
         changed = true;
-      }
-      // If not completed, or completed after the due date, do nothing (do not reset)
-    } else if (
-      course &&
-      course.isRecurring &&
-      course.recurringNextDate &&
-      !enrollment.nextDueDate
-    ) {
-      // First time setup: only set nextDueDate if it's in the future
-      if (
-        new Date(course.recurringNextDate) > new Date(enrollment.enrolledAt)
-      ) {
-        enrollment.nextDueDate = course.recurringNextDate;
-        changed = true;
-      }
+           }
     }
   }
   if (changed) {
@@ -165,6 +158,7 @@ router.patch("/profile", authMiddleware, async (req, res) => {
 // Get all enrolled courses + progress
 router.get("/enrollments", authMiddleware, async (req, res) => {
   try {
+    await reassignRecurringCourses(req.user._id); 
     await req.user.populate("enrolledCourses.course");
     res.json(req.user.enrolledCourses);
   } catch (err) {
@@ -229,6 +223,15 @@ router.patch(
     }
   }
 );
+
+router.post("/reassign-recurring", authMiddleware, async (req, res) => {
+  try {
+    await reassignRecurringCourses(req.user._id);
+    res.json({ message: "Recurring courses reassigned" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to reassign recurring courses" });
+  }
+});
 
 module.exports = router;
 module.exports.reassignRecurringCourses = reassignRecurringCourses;

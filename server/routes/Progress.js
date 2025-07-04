@@ -8,6 +8,7 @@ const { createCanvas, loadImage } = require("canvas");
 const uploadToCloudinary = require("../utils/uploadToCloudinary");
 const { v4: uuidv4 } = require("uuid");
 const generateCertificateForUser = require("../utils/generateCertificateForUser.js");
+const { isAdmin } = require("../middleware/auth");
 
 // Helper: Generate certificate image with user's name
 async function generateCertificateImage(templateUrl, name, textSettings) {
@@ -379,5 +380,51 @@ router.post(
     }
   }
 );
+
+router.post("/:courseId/unit/:unitIndex/violation", authMiddleware, async (req, res) => {
+  const { courseId, unitIndex } = req.params;
+  const user = await User.findById(req.user._id);
+  const enrollment = user.enrolledCourses.find(e => e.course.toString() === courseId);
+  const unitProgress = enrollment.unitsProgress[unitIndex];
+  if (!unitProgress.assignment) return res.status(400).json({ message: "No assignment" });
+
+  unitProgress.assignment.violationCount = (unitProgress.assignment.violationCount || 0) + 1;
+  if (unitProgress.assignment.violationCount >= 3) {
+    unitProgress.assignment.blocked = true;
+  }
+  user.markModified("enrolledCourses");
+  await user.save();
+  res.json({
+    violationCount: unitProgress.assignment.violationCount,
+    blocked: unitProgress.assignment.blocked,
+  });
+});
+
+
+router.post("/:courseId/unit/:unitIndex/reset-block/:userId", authMiddleware, isAdmin, async (req, res) => {
+  const { courseId, unitIndex, userId } = req.params;
+  const user = await User.findById(userId);
+  const enrollment = user.enrolledCourses.find(e => e.course.toString() === courseId);
+  const unitProgress = enrollment.unitsProgress[unitIndex];
+  if (!unitProgress.assignment) return res.status(400).json({ message: "No assignment" });
+
+  unitProgress.assignment.violationCount = 0;
+  unitProgress.assignment.blocked = false;
+  user.markModified("enrolledCourses");
+  await user.save();
+  res.json({ message: "Block reset" });
+});
+
+router.get("/:courseId/unit/:unitIndex/block-status", authMiddleware, async (req, res) => {
+  const { courseId, unitIndex } = req.params;
+  const user = await User.findById(req.user._id);
+  const enrollment = user.enrolledCourses.find(e => e.course.toString() === courseId);
+  const unitProgress = enrollment.unitsProgress[unitIndex];
+  if (!unitProgress.assignment) return res.json({ violationCount: 0, blocked: false });
+  res.json({
+    violationCount: unitProgress.assignment.violationCount || 0,
+    blocked: unitProgress.assignment.blocked || false,
+  });
+});
 
 module.exports = router;

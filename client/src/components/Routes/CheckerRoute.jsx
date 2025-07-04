@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
 import { Navigate, useLocation, useParams } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext } from "../../context/AuthContext";
 
 const CheckerRoute = ({ children }) => {
   const { user } = useContext(AuthContext);

@@ -43,6 +43,8 @@ const assignmentProgressSchema = new mongoose.Schema(
     attemptCount: { type: Number, default: 0 },
     questionsProgress: [questionProgressSchema],
     lastAccessed: { type: Date, default: Date.now },
+    violationCount: { type: Number, default: 0 }, 
+    blocked: { type: Boolean, default: false }, 
   },
   { _id: false }
 );
@@ -80,8 +82,9 @@ const enrollmentSchema = new mongoose.Schema(
       certificateUrl: String,
       storageUrl: String,
     },
-    assignedByAdmin: { type: Boolean, default: false }, 
+    assignedByAdmin: { type: Boolean, default: false },
     nextDueDate: { type: Date },
+    completedAt: { type: Date }, 
   },
   { _id: false }
 );
