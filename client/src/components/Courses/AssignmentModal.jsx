@@ -56,7 +56,7 @@ const AssignmentModal = ({
   }, [show]);
 
   const handleAssignSubmit = async () => {
-    if (
+    if (  
       !assignmentType ||
       (assignmentType === "user" && selectedUsers.length === 0) ||
       (assignmentType === "team" && !selectedTeam)
