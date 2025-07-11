@@ -36,6 +36,8 @@ import AdminDashboard from "./components/AdminDashboard/AdminDashboard";
 const AppLayout = () => {
   const location = useLocation();
   const isAuthPage = ["/login", "/register"].includes(location.pathname);
+  // Hide footer on CourseDetail page
+  const isCourseDetailPage = /^\/courses\/[^/]+$/.test(location.pathname);
 
   return (
     <>
@@ -185,7 +187,8 @@ const AppLayout = () => {
           />
         </Routes>
       </div>
-      {!isAuthPage && <Footer />}
+      {/* Only show Footer if not on CourseDetail page and not on auth pages */}
+      {!isAuthPage && !isCourseDetailPage && <Footer />}
     </>
   );
 };

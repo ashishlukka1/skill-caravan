@@ -7,15 +7,19 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postinstall": "flowbite-react patch"
   },
   "dependencies": {
     "@nivo/pie": "^0.99.0",
+    "@tailwindcss/vite": "^4.1.11",
     "axios": "^1.9.0",
     "bootstrap": "^5.3.6",
+    "flowbite-react": "^0.11.8",
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.1",
     "lucide-react": "^0.514.0",
+    "primereact": "^10.9.6",
     "react": "^19.1.0",
     "react-bootstrap": "^2.10.10",
     "react-dom": "^19.1.0",
@@ -25,6 +29,7 @@
     "react-moveable": "^0.56.0",
     "react-router-dom": "^7.6.2",
     "swiper": "^11.2.8",
+    "tailwindcss": "^4.1.11",
     "tesseract.js": "^6.0.1"
   },
   "devDependencies": {

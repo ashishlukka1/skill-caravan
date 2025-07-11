@@ -9,7 +9,7 @@ const TopRightAlert = ({ show, variant, message, onClose }) => {
     info: <span style={{ fontSize: 20, marginRight: 12 }}>ℹ️</span>,
   };
   const backgroundMap = {
-    success: " #4CAF50",
+    success: "rgb(115, 182, 118)",
     error: " #F44336",
     info: " #2196F3",
   };
@@ -32,7 +32,7 @@ const TopRightAlert = ({ show, variant, message, onClose }) => {
         style={{
           backgroundColor: backgroundMap[variant],
           border: "none",
-          borderRadius: "12px",
+          borderRadius: "8px",
           minWidth: "320px",
           maxWidth: "440px",
           boxShadow: "0 4px 12px rgba(0,0,0,0.15)",

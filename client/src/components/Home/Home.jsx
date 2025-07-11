@@ -255,9 +255,7 @@ const Home = () => {
     setLoading(true);
     setError(null);
     try {
-      // 1. Trigger recurring logic
       await axios.post("/api/users/reassign-recurring");
-      // 2. Fetch enrollments
       const enrollmentsResponse = await axios.get("/api/users/enrollments");
       setEnrollments(
         enrollmentsResponse.data?.filter((e) => e?.course) || []
